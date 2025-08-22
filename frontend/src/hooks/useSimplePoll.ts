@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { parseEther, formatEther, type Address } from 'viem';
 import { readContract } from '@wagmi/core';
 import { config as wagmiConfig } from '../wagmi';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 
 // SimplePoll contract ABI
 const SIMPLE_POLL_ABI = [
@@ -51,7 +51,10 @@ const SIMPLE_POLL_ABI = [
       {"internalType": "string", "name": "_title", "type": "string"},
       {"internalType": "string", "name": "_description", "type": "string"},
       {"internalType": "string[]", "name": "_options", "type": "string[]"},
-      {"internalType": "uint256", "name": "_durationInHours", "type": "uint256"}
+      {"internalType": "uint256", "name": "_durationInSeconds", "type": "uint256"},
+      {"internalType": "uint256", "name": "_requiredCredibility", "type": "uint256"},
+      {"internalType": "uint256", "name": "_pollPrice", "type": "uint256"},
+      {"internalType": "uint256", "name": "_maxVotes", "type": "uint256"}
     ],
     "name": "createPoll",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
@@ -69,17 +72,31 @@ const SIMPLE_POLL_ABI = [
     "inputs": [{"internalType": "uint256", "name": "_pollId", "type": "uint256"}],
     "name": "getPoll",
     "outputs": [
-      {"internalType": "uint256", "name": "id", "type": "uint256"},
-      {"internalType": "string", "name": "title", "type": "string"},
-      {"internalType": "string", "name": "description", "type": "string"},
-      {"internalType": "address", "name": "creator", "type": "address"},
-      {"internalType": "string[]", "name": "options", "type": "string[]"},
-      {"internalType": "uint256", "name": "endTime", "type": "uint256"},
-      {"internalType": "bool", "name": "settled", "type": "bool"},
-      {"internalType": "uint256", "name": "winningOption", "type": "uint256"},
-      {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
-      {"internalType": "uint256", "name": "creatorDeposit", "type": "uint256"},
-      {"internalType": "uint256", "name": "voterPool", "type": "uint256"}
+      {
+        "components": [
+          {"internalType": "uint256", "name": "id", "type": "uint256"},
+          {"internalType": "string", "name": "title", "type": "string"},
+          {"internalType": "string", "name": "description", "type": "string"},
+          {"internalType": "address", "name": "creator", "type": "address"},
+          {"internalType": "string[]", "name": "options", "type": "string[]"},
+          {"internalType": "uint256", "name": "endTime", "type": "uint256"},
+          {"internalType": "bool", "name": "settled", "type": "bool"},
+          {"internalType": "uint256", "name": "winningOption", "type": "uint256"},
+          {"internalType": "uint256", "name": "totalPool", "type": "uint256"},
+          {"internalType": "uint256", "name": "creatorDeposit", "type": "uint256"},
+          {"internalType": "uint256", "name": "voterPool", "type": "uint256"},
+          {"internalType": "bool", "name": "exists", "type": "bool"},
+          {"internalType": "uint256", "name": "requiredCredibility", "type": "uint256"},
+          {"internalType": "uint256", "name": "pollPrice", "type": "uint256"},
+          {"internalType": "uint256", "name": "maxVotes", "type": "uint256"},
+          {"internalType": "uint256", "name": "currentVotes", "type": "uint256"},
+          {"internalType": "uint256", "name": "voterBetAmount", "type": "uint256"},
+          {"internalType": "bool", "name": "creatorRefillClaimed", "type": "bool"}
+        ],
+        "internalType": "struct SimplePoll.Poll",
+        "name": "",
+        "type": "tuple"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -217,7 +234,7 @@ const SIMPLE_POLL_ABI = [
 // Contract addresses (you'll need to deploy and update these)
 const CONTRACT_ADDRESSES = {
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, // Default Hardhat address
-  bscTestnet: '0xa5119569CD9393f2C10737E25a677fB6dbeE56f5' as Address, // Updated with automatic settlement support
+  bscTestnet: '0xFEeedF040dd2eb564AD31246b6CA877353582aE9' as Address, // Updated with dynamic pricing system
 };
 
 export interface Poll {
@@ -232,6 +249,11 @@ export interface Poll {
   totalPool: bigint;
   creatorDeposit: bigint;
   voterPool: bigint;
+  requiredCredibility: bigint;
+  pollPrice: bigint;
+  maxVotes: bigint;
+  currentVotes: bigint;
+  voterBetAmount: bigint;
 }
 
 export interface PollRewardBreakdown {
@@ -256,7 +278,7 @@ export const useSimplePoll = (chainId?: number) => {
     console.log('📍 Selected contract address:', contractAddress);
   }, [chainId, contractAddress]);
 
-  // Read functions
+  // Call ALL hooks at the top level
   const { data: entryFee } = useReadContract({
     address: contractAddress,
     abi: SIMPLE_POLL_ABI,
@@ -275,6 +297,9 @@ export const useSimplePoll = (chainId?: number) => {
     functionName: 'nextPollId',
   });
 
+  // For dynamic data, use a different approach
+  const [pollData, setPollData] = useState<any>(null);
+
   // Write functions
   const { writeContract: createPoll, data: createPollTxHash, isPending: isCreatingPoll, error: createPollError } = useWriteContract();
   const { writeContract: addDeposit, data: addDepositTxHash, isPending: isAddingDeposit, error: addDepositError } = useWriteContract();
@@ -288,8 +313,26 @@ export const useSimplePoll = (chainId?: number) => {
   const { isLoading: isSettleConfirming } = useWaitForTransactionReceipt({ hash: settleTxHash });
 
   // Helper functions
-  const createNewPoll = (title: string, description: string, options: string[], durationMinutes: number, creatorDepositEth: string) => {
-    console.log('🚀 Creating new poll:', { title, description, options, durationMinutes, creatorDepositEth });
+  const createNewPoll = (
+    title: string, 
+    description: string, 
+    options: string[], 
+    durationMinutes: number, 
+    creatorDepositEth: string,
+    requiredCredibility: number = 10,
+    pollPrice: string = "0.01",
+    maxVotes: number = 100
+  ) => {
+    console.log('🚀 Creating new poll:', { 
+      title, 
+      description, 
+      options, 
+      durationMinutes, 
+      creatorDepositEth,
+      requiredCredibility,
+      pollPrice,
+      maxVotes
+    });
     console.log('📍 Contract address:', contractAddress);
     console.log('💰 Min creator deposit:', minCreatorDeposit);
     
@@ -299,7 +342,10 @@ export const useSimplePoll = (chainId?: number) => {
     }
     
     const depositAmount = parseEther(creatorDepositEth);
+    const pollPriceAmount = parseEther(pollPrice);
+    
     console.log('💵 Deposit amount (wei):', depositAmount.toString());
+    console.log('💵 Poll price (wei):', pollPriceAmount.toString());
     console.log('💵 Min deposit (wei):', minCreatorDeposit.toString());
     
     if (depositAmount < minCreatorDeposit) {
@@ -313,7 +359,15 @@ export const useSimplePoll = (chainId?: number) => {
     console.log('📞 Calling createPoll with:', {
       address: contractAddress,
       functionName: 'createPoll',
-      args: [title, description, options, BigInt(durationInSeconds)],
+      args: [
+        title, 
+        description, 
+        options, 
+        BigInt(durationInSeconds),
+        BigInt(requiredCredibility),
+        pollPriceAmount,
+        BigInt(maxVotes)
+      ],
       value: depositAmount.toString(),
     });
     
@@ -322,7 +376,15 @@ export const useSimplePoll = (chainId?: number) => {
         address: contractAddress,
         abi: SIMPLE_POLL_ABI,
         functionName: 'createPoll',
-        args: [title, description, options, BigInt(durationInSeconds)],
+        args: [
+          title, 
+          description, 
+          options, 
+          BigInt(durationInSeconds),
+          BigInt(requiredCredibility),
+          pollPriceAmount,
+          BigInt(maxVotes)
+        ],
         value: depositAmount,
       });
       console.log('✅ createPoll function called successfully');
@@ -345,6 +407,17 @@ export const useSimplePoll = (chainId?: number) => {
   const voteOnPoll = (pollId: number, optionId: number) => {
     if (!entryFee) return;
     
+    // Check if poll is still active before voting
+    const now = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+    const poll = useReadContract({
+      address: contractAddress,
+      abi: SIMPLE_POLL_ABI,
+      functionName: 'getPoll',
+      args: [BigInt(pollId)],
+    });
+
+    // Poll end time check removed - will be handled by smart contract
+
     vote({
       address: contractAddress,
       abi: SIMPLE_POLL_ABI,
@@ -378,13 +451,20 @@ export const useSimplePoll = (chainId?: number) => {
     });
   };
 
-  const getPollById = (pollId: number) => {
-    return useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'getPoll',
-      args: [BigInt(pollId)],
-    });
+  // Helper functions that don't call hooks
+  const getPollById = async (pollId: number) => {
+    try {
+      const result = await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'getPoll',
+        args: [BigInt(pollId)],
+      });
+      return result;
+    } catch (error) {
+      console.error('Error fetching poll:', error);
+      return null;
+    }
   };
 
   const getVoterCount = (pollId: number, optionId: number) => {
@@ -527,20 +607,25 @@ export const useSimplePoll = (chainId?: number) => {
 
 // Helper function to format poll data from contract
 export const formatPollData = (pollData: any): Poll | null => {
-  if (!pollData || pollData.length < 11) return null;
+  if (!pollData) return null;
 
   return {
-    id: pollData[0],
-    title: pollData[1],
-    description: pollData[2],
-    creator: pollData[3],
-    options: pollData[4],
-    endTime: pollData[5],
-    settled: pollData[6],
-    winningOption: pollData[7],
-    totalPool: pollData[8],
-    creatorDeposit: pollData[9],
-    voterPool: pollData[10],
+    id: pollData.id,
+    title: pollData.title,
+    description: pollData.description,
+    creator: pollData.creator,
+    options: pollData.options,
+    endTime: pollData.endTime,
+    settled: pollData.settled,
+    winningOption: pollData.winningOption,
+    totalPool: pollData.totalPool,
+    creatorDeposit: pollData.creatorDeposit,
+    voterPool: pollData.voterPool,
+    requiredCredibility: pollData.requiredCredibility,
+    pollPrice: pollData.pollPrice,
+    maxVotes: pollData.maxVotes,
+    currentVotes: pollData.currentVotes,
+    voterBetAmount: pollData.voterBetAmount,
   };
 };
 

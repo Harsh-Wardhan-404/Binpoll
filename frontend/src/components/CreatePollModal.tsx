@@ -17,8 +17,57 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
   const [options, setOptions] = useState(['', '']);
   const [duration, setDuration] = useState(60); // Default 1 hour in minutes
   const [creatorDeposit, setCreatorDeposit] = useState('0.002'); // Default minimum deposit
+  const [requiredCredibility, setRequiredCredibility] = useState(10); // Default credibility requirement
+  const [pollPrice, setPollPrice] = useState('0.01'); // Default poll price
+  const [maxVotes, setMaxVotes] = useState(100); // Default max votes
   const [useBlockchain, setUseBlockchain] = useState(true);
   const processedTxHashes = useRef(new Set<string>());
+
+  // Dynamic per-vote pricing calculation functions
+  const calculateBaseVotePrice = (maxVotes: number): number => {
+    // Base vote price: 0.001 BNB minimum, scales slightly with poll size
+    const basePrice = Math.max(0.001, (maxVotes / 1000) * 0.001);
+    return Math.round(basePrice * 1000000) / 1000000; // Round to 6 decimal places
+  };
+
+  const calculateMaxVotePrice = (maxVotes: number): number => {
+    // Maximum vote price: 5x the base price (anti-spam protection)
+    const maxPrice = calculateBaseVotePrice(maxVotes) * 5;
+    return Math.round(maxPrice * 1000000) / 1000000;
+  };
+
+  const calculateRecommendedVotePrice = (maxVotes: number): number => {
+    // Recommended vote price: 2x the base price (balanced approach)
+    const recommended = calculateBaseVotePrice(maxVotes) * 2;
+    return Math.round(recommended * 1000000) / 1000000;
+  };
+
+  const calculateVotePriceAtPosition = (basePrice: number, currentVotes: number, maxVotes: number): number => {
+    // Dynamic pricing: price increases as more people vote
+    // Formula: basePrice * (1 + (currentVotes / maxVotes) * 4)
+    // This means: first vote = basePrice, last vote = 5x basePrice
+    const multiplier = 1 + (currentVotes / maxVotes) * 4;
+    const dynamicPrice = basePrice * multiplier;
+    return Math.round(dynamicPrice * 1000000) / 1000000;
+  };
+
+  const calculateTotalPollValue = (baseVotePrice: number, maxVotes: number): number => {
+    // Total poll value = sum of all vote prices from first to last
+    // This creates a curve where early votes are cheaper
+    let total = 0;
+    for (let i = 0; i < maxVotes; i++) {
+      total += calculateVotePriceAtPosition(baseVotePrice, i, maxVotes);
+    }
+    return Math.round(total * 1000000) / 1000000;
+  };
+
+  // Auto-update poll price when maxVotes changes
+  useEffect(() => {
+    if (useBlockchain) {
+      const newBaseVotePrice = calculateBaseVotePrice(maxVotes);
+      setPollPrice(newBaseVotePrice.toString());
+    }
+  }, [maxVotes, useBlockchain]);
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -90,7 +139,10 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
             blockchainId: '1', // Will be updated with actual poll ID from events
             transactionHash: createPollTxHash,
             creatorAddress: address,
-            totalPool: creatorDeposit
+            totalPool: creatorDeposit,
+            requiredCredibility,
+            pollPrice,
+            maxVotes
           });
           
           if (result) {
@@ -167,7 +219,10 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
             description.trim(),
             validOptions,
             duration,
-            creatorDeposit
+            creatorDeposit,
+            requiredCredibility,
+            pollPrice,
+            maxVotes
           );
           
           // Don't close modal immediately - wait for transaction to be initiated
@@ -211,6 +266,9 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
     setOptions(['', '']);
     setDuration(60);
     setCreatorDeposit('0.002');
+    setRequiredCredibility(10);
+    setMaxVotes(100);
+    setPollPrice(calculateBaseVotePrice(100).toString()); // Use calculated base vote price
     setUseBlockchain(true);
     // Clear processed transaction hashes
     processedTxHashes.current.clear();
@@ -523,6 +581,139 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 </div>
               )}
 
+              {/* New Reward System Fields (only for blockchain polls) */}
+              {useBlockchain && (
+                <div className="space-y-4">
+                  {/* Required Credibility */}
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-300 mb-2">
+                      Required Credibility
+                    </label>
+                    <input
+                      type="number"
+                      value={requiredCredibility}
+                      onChange={(e) => setRequiredCredibility(parseInt(e.target.value))}
+                      min={10}
+                      max={1000}
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="10"
+                    />
+                    <div className="text-xs text-secondary-400 mt-1">
+                      Minimum credibility users need to vote on this poll
+                    </div>
+                  </div>
+
+                  {/* Max Votes */}
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-300 mb-2">
+                      Maximum Votes
+                    </label>
+                    <input
+                      type="number"
+                      value={maxVotes}
+                      onChange={(e) => setMaxVotes(parseInt(e.target.value))}
+                      min={10}
+                      max={1000}
+                      className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="100"
+                    />
+                    <div className="text-xs text-secondary-400 mt-1">
+                      Maximum number of votes allowed for this poll
+                    </div>
+                  </div>
+
+                  {/* Dynamic Poll Price (calculated based on max votes) */}
+                  <div>
+                    <label className="block text-sm font-medium text-secondary-300 mb-2">
+                      Poll Price (Total Bet Amount)
+                    </label>
+                    <div className="space-y-3">
+                      {/* Base Vote Price Display */}
+                      <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-secondary-300">Base Vote Price:</span>
+                          <span className="text-primary-400 font-medium">
+                            {calculateBaseVotePrice(maxVotes)} BNB
+                          </span>
+                        </div>
+                        <div className="text-xs text-secondary-400 mt-1">
+                          First voter pays this amount
+                        </div>
+                      </div>
+                      
+                      {/* Dynamic Pricing Preview */}
+                      <div className="bg-gradient-to-r from-green-500/10 to-red-500/10 border border-white/10 rounded-lg p-3">
+                        <div className="text-sm font-medium text-white mb-2">Dynamic Pricing Preview</div>
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          <div className="text-center">
+                            <div className="text-green-400 font-medium">First Vote</div>
+                            <div className="text-secondary-300">{calculateBaseVotePrice(maxVotes)} BNB</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-yellow-400 font-medium">Middle Vote</div>
+                            <div className="text-secondary-300">{calculateVotePriceAtPosition(calculateBaseVotePrice(maxVotes), Math.floor(maxVotes/2), maxVotes)} BNB</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-red-400 font-medium">Last Vote</div>
+                            <div className="text-secondary-300">{calculateVotePriceAtPosition(calculateBaseVotePrice(maxVotes), maxVotes - 1, maxVotes)} BNB</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Base Vote Price Input */}
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            value={pollPrice}
+                            onChange={(e) => setPollPrice(e.target.value)}
+                            min={calculateBaseVotePrice(maxVotes)}
+                            step="0.000001"
+                            className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                            placeholder={calculateBaseVotePrice(maxVotes).toString()}
+                          />
+                        </div>
+                        <div className="text-secondary-300 font-medium">BNB</div>
+                      </div>
+                      
+                      {/* Quick Price Adjustment Buttons */}
+                      <div className="flex space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => setPollPrice(calculateBaseVotePrice(maxVotes).toString())}
+                          className="px-3 py-1 text-xs rounded-full border border-white/20 text-secondary-300 hover:border-white/40 hover:bg-white/5 transition-colors"
+                        >
+                          Base Price
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPollPrice(calculateRecommendedVotePrice(maxVotes).toString())}
+                          className="px-3 py-1 text-xs rounded-full border border-primary-500/30 text-primary-400 hover:border-primary-500/50 hover:bg-primary-500/10 transition-colors"
+                        >
+                          Recommended
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPollPrice(calculateMaxVotePrice(maxVotes).toString())}
+                          className="px-3 py-1 text-xs rounded-full border border-white/20 text-secondary-300 hover:border-white/40 hover:bg-white/5 transition-colors"
+                        >
+                          Max Price
+                        </button>
+                      </div>
+                      
+                      {/* Price Range Info */}
+                      <div className="text-xs text-secondary-400">
+                        <div>• Base vote price: {calculateBaseVotePrice(maxVotes)} BNB</div>
+                        <div>• Recommended: {calculateRecommendedVotePrice(maxVotes)} BNB</div>
+                        <div>• Maximum: {calculateMaxVotePrice(maxVotes)} BNB</div>
+                        <div>• Total poll value: {calculateTotalPollValue(parseFloat(pollPrice) || calculateBaseVotePrice(maxVotes), maxVotes)} BNB</div>
+                        <div>• Early voters get better prices!</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Poll Info */}
               {useBlockchain ? (
                 <div className="bg-primary-500/10 border border-primary-500/20 rounded-lg p-4">
@@ -531,9 +722,14 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                     <span className="text-primary-300 font-medium">Blockchain Prediction Market</span>
                   </div>
                   <div className="text-sm text-secondary-300 space-y-1">
-                    <div>• Voting fee: {entryFee} BNB per vote</div>
+                    <div>• Required credibility: {requiredCredibility}</div>
+                    <div>• Max votes: {maxVotes}</div>
+                    <div>• Base vote price: {calculateBaseVotePrice(maxVotes)} BNB</div>
+                    <div>• First vote: {calculateBaseVotePrice(maxVotes)} BNB</div>
+                    <div>• Last vote: {calculateVotePriceAtPosition(calculateBaseVotePrice(maxVotes), maxVotes - 1, maxVotes)} BNB</div>
+                    <div>• Total poll value: {calculateTotalPollValue(calculateBaseVotePrice(maxVotes), maxVotes)} BNB</div>
                     <div>• Creator deposit: {creatorDeposit} BNB</div>
-                    <div>• Reward distribution: 85% to winners, 10% platform, 5% creator</div>
+                    <div>• Dynamic pricing rewards early voters</div>
                     <div>• Immutable and transparent on BSC</div>
                   </div>
                 </div>

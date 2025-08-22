@@ -273,6 +273,55 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                 <div className="text-secondary-300">Status</div>
               </motion.div>
             </div>
+
+            {/* Reward System Info */}
+            {poll.is_on_chain && poll.max_voters && (
+              <motion.div
+                className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-2xl p-6 mb-8"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+              >
+                <h3 className="text-xl font-bold text-white mb-4 text-center">Reward System Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                  <div>
+                    <div className="text-lg font-semibold text-purple-400">
+                      {poll.current_voter_count || 0} / {poll.max_voters}
+                    </div>
+                    <div className="text-sm text-secondary-300">Votes Cast</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-blue-400">
+                      {poll.min_credibility_required || 10}
+                    </div>
+                    <div className="text-sm text-secondary-300">Required Credibility</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-green-400">
+                      {poll.is_credibility_gated ? 'Yes' : 'No'}
+                    </div>
+                    <div className="text-sm text-secondary-300">Credibility Gated</div>
+                  </div>
+                  <div>
+                    <div className="text-lg font-semibold text-yellow-400">
+                      {poll.max_voters && poll.current_voter_count ? 
+                        Math.round(((poll.current_voter_count / poll.max_voters) * 100)) : 0}%
+                    </div>
+                    <div className="text-sm text-secondary-300">Vote Progress</div>
+                  </div>
+                </div>
+                {poll.max_voters && poll.current_voter_count && poll.current_voter_count >= poll.max_voters && (
+                  <div className="mt-4 text-center">
+                    <div className="inline-flex items-center px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400">
+                      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Poll has reached maximum voters! No more votes accepted.
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
         </section>
 
@@ -365,12 +414,40 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                 </motion.div>
               )}
 
+              {/* Poll Full Message */}
+              {poll?.max_voters && poll?.current_voter_count && poll.current_voter_count >= poll.max_voters && (
+                <motion.div
+                  className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 mb-6 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="flex items-center justify-center space-x-2 text-red-400 mb-2">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="text-xl font-bold">Poll is Full!</span>
+                  </div>
+                  <p className="text-red-300 mb-4">
+                    This poll has reached its maximum voter limit of {poll.max_voters}. No more votes can be cast.
+                  </p>
+                  <div className="bg-red-500/20 rounded-lg p-4">
+                    <h4 className="text-red-400 font-medium mb-2">Current Status:</h4>
+                    <div className="space-y-1 text-sm text-red-300">
+                      <div>• Total votes cast: {poll.current_voter_count}</div>
+                      <div>• Maximum allowed: {poll.max_voters}</div>
+                      <div>• Poll will be automatically settled when it ends</div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               <div className="space-y-4">
                 {options.map((option, index) => (
                   <motion.div
                     key={option.id}
                     className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all duration-300 ${
-                      userHasVoted || isVoting || isBlockchainVoting
+                      userHasVoted || isVoting || isBlockchainVoting || (poll?.max_voters && poll?.current_voter_count && poll.current_voter_count >= poll.max_voters)
                         ? 'opacity-60 cursor-not-allowed' 
                         : 'hover:bg-white/10 cursor-pointer'
                     } ${
@@ -380,7 +457,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
                     onClick={() => {
-                      if (!userHasVoted && !isVoting && !isBlockchainVoting) {
+                      if (!userHasVoted && !isVoting && !isBlockchainVoting && !(poll?.max_voters && poll?.current_voter_count && poll.current_voter_count >= poll.max_voters)) {
                         handleVoteClick(index);
                       }
                     }}
