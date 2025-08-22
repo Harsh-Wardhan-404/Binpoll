@@ -131,7 +131,7 @@ const Profile: React.FC = () => {
                         </svg>
                       </div>
                                              <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
-                       <p className="text-2xl font-bold text-primary-400">{profile.user?.totalPollsCreated || 0}</p>
+                      <p className="text-2xl font-bold text-primary-400">{profile.user?.totalPollsCreated || 0}</p>
                     </div>
                   </motion.div>
 
@@ -148,7 +148,7 @@ const Profile: React.FC = () => {
                         </svg>
                       </div>
                                              <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
-                       <p className="text-2xl font-bold text-primary-400">{profile.statistics?.totalVotesCast || 0}</p>
+                      <p className="text-2xl font-bold text-primary-400">{profile.user?.totalVotesCast || 0}</p>
                     </div>
                   </motion.div>
 
@@ -165,7 +165,7 @@ const Profile: React.FC = () => {
                         </svg>
                       </div>
                                              <h3 className="text-lg font-semibold text-white mb-2">Credibility Score</h3>
-                       <p className="text-2xl font-bold text-primary-400">{profile.user?.credibilityScore || 0}%</p>
+                      <p className="text-2xl font-bold text-primary-400">{profile.user?.credibilityScore || 0}%</p>
                     </div>
                   </motion.div>
 
@@ -182,7 +182,7 @@ const Profile: React.FC = () => {
                         </svg>
                       </div>
                                              <h3 className="text-lg font-semibold text-white mb-2">Reputation Level</h3>
-                       <p className="text-lg font-medium text-primary-400">{profile.user?.reputationLevel || 'Novice'}</p>
+                      <p className="text-lg font-medium text-primary-400">{profile.user?.reputationLevel || 'Novice'}</p>
                     </div>
                   </motion.div>
                 </div>
@@ -226,7 +226,7 @@ const Profile: React.FC = () => {
                 </motion.div>
               )}
 
-                             {/* Poll Statistics */}
+              {/* Poll Statistics */}
                {profile && profile.statistics && (
                  <motion.div
                    initial={{ opacity: 0, y: 20 }}
@@ -303,20 +303,61 @@ const Profile: React.FC = () => {
                        </div>
                      ))}
                    </div>
-                                 </motion.div>
+                </motion.div>
                )}
 
                {/* User's Polls */}
-               {profile && profile.polls && Array.isArray(profile.polls) && profile.polls.length > 0 && (
+               {profile && profile.activePolls && Array.isArray(profile.activePolls) && profile.activePolls.length > 0 && (
                  <motion.div
                    initial={{ opacity: 0, y: 20 }}
                    animate={{ opacity: 1, y: 0 }}
                    transition={{ delay: 0.8 }}
                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                  >
-                   <h3 className="text-xl font-semibold text-white mb-4">Your Polls</h3>
+                   <h3 className="text-xl font-semibold text-white mb-4">Your Active Polls</h3>
                    <div className="space-y-3">
-                     {profile.polls.slice(0, 5).map((poll, index) => (
+                     {profile.activePolls.slice(0, 5).map((poll, index) => (
+                       <div key={poll.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+                             <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                           </div>
+                           <div>
+                             <p className="text-white font-medium">{poll.title}</p>
+                             <p className="text-secondary-300 text-sm">
+                               Created: {new Date(poll.created_at).toLocaleDateString()}
+                             </p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                             poll.is_active 
+                               ? 'bg-green-500/20 text-green-400' 
+                               : 'bg-red-500/20 text-red-400'
+                           }`}>
+                             {poll.is_active ? 'Active' : 'Ended'}
+                           </span>
+                           <p className="text-secondary-300 text-xs mt-1">
+                             {poll.total_votes} votes
+                           </p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </motion.div>
+               )}
+               {profile && profile.endedPolls && Array.isArray(profile.endedPolls) && profile.endedPolls.length > 0 && (
+                 <motion.div
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: 0.8 }}
+                   className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                 >
+                   <h3 className="text-xl font-semibold text-white mb-4">Your Ended Polls</h3>
+                   <div className="space-y-3">
+                     {profile.endedPolls.slice(0, 5).map((poll, index) => (
                        <div key={poll.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
                          <div className="flex items-center space-x-3">
                            <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
