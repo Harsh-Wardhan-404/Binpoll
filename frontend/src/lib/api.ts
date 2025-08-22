@@ -221,6 +221,42 @@ class ApiClient {
     });
   }
 
+  async createBlockchainPoll(data: {
+    title: string;
+    description: string;
+    options: string[];
+    durationHours: number;
+    category?: string;
+    blockchainId: string;
+    transactionHash: string;
+    creatorAddress: string;
+    totalPool: string;
+  }) {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        title: string;
+        description: string;
+        options: string[];
+        category: string;
+        end_time: string;
+        is_active: boolean;
+        total_votes: number;
+        optionVotes: number[];
+        optionPercentages: number[];
+        totalVotes: number;
+        blockchain_id?: string;
+        transaction_hash?: string;
+        creator_address?: string;
+        total_pool?: string;
+      };
+    }>('/polls/blockchain', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async voteOnPoll(pollId: string, optionIndex: number, amount?: string) {
     return this.request<{
       success: boolean;
