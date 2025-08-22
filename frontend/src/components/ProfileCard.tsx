@@ -29,18 +29,18 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   const { isAuthenticated } = useAuth();
 
   // Use real data if available, otherwise use props
-  const displayName = profile?.username || name;
-  const displayTitle = profile?.stats?.rank || title;
-  const displayHandle = profile?.walletAddress ? 
-    `${profile.walletAddress.slice(0, 6)}...${profile.walletAddress.slice(-4)}` : 
-    handle;
+  const displayName = profile?.user?.username || name;
+  const displayTitle = profile?.user?.reputationLevel || title;
+  const displayHandle = profile?.user?.walletAddress
+    ? `${profile.user.walletAddress.slice(0, 6)}...${profile.user.walletAddress.slice(-4)}`
+    : handle;
   const displayStatus = isAuthenticated ? "Online" : "Offline";
   
   // Create a fallback avatar if no valid avatar URL is provided
   const fallbackAvatar = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"><rect width="400" height="600" fill="#f0b90b"/><text x="200" y="320" font-family="Arial, sans-serif" font-size="120" fill="#1a1a1b" text-anchor="middle" font-weight="bold">U</text></svg>')}`;
   
-  const displayAvatar = profile?.avatarUrl || avatarUrl || fallbackAvatar;
-  const displayMiniAvatar = profile?.avatarUrl || avatarUrl || fallbackAvatar;
+  const displayAvatar = profile?.user?.avatarUrl || avatarUrl || fallbackAvatar;
+  const displayMiniAvatar = profile?.user?.avatarUrl || avatarUrl || fallbackAvatar;
 
   const handleContactClick = () => {
     onContactClick?.();
@@ -86,19 +86,19 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
             <div className="pc-details">
               <h3>{displayName}</h3>
               <p>{displayTitle}</p>
-              {profile?.stats && (
+              {profile?.statistics && (
                 <div className="pc-stats">
                   <div className="pc-stat-item">
                     <span className="pc-stat-label">Polls</span>
-                    <span className="pc-stat-value">{profile.stats.pollsCreated}</span>
+                    <span className="pc-stat-value">{profile.user?.totalPollsCreated || 0}</span>
                   </div>
                   <div className="pc-stat-item">
                     <span className="pc-stat-label">Votes</span>
-                    <span className="pc-stat-value">{profile.stats.votesCast}</span>
+                    <span className="pc-stat-value">{profile.user?.totalVotesCast || 0}</span>
                   </div>
                   <div className="pc-stat-item">
                     <span className="pc-stat-label">Earnings</span>
-                    <span className="pc-stat-value">{profile.stats.totalEarnings} BNB</span>
+                    <span className="pc-stat-value">{profile.user?.totalEarnings || 0} BNB</span>
                   </div>
                 </div>
               )}
@@ -123,22 +123,17 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 <div className="pc-user-text">
                   <div className="pc-handle">@{displayHandle}</div>
                   <div className="pc-status">{displayStatus}</div>
-                  {profile?.balance && (
-                    <div className="pc-balance">
-                      <div className="pc-balance-bnb">{profile.balance.bnb} BNB</div>
-                      <div className="pc-balance-usd">${profile.balance.usd}</div>
-                    </div>
-                  )}
+                  {/* Remove balance display as it's not in the new response */}
                 </div>
               </div>
-              <button
+              {/* <button
                 className="pc-contact-btn"
                 onClick={handleContactClick}
                 type="button"
                 aria-label={`Contact ${displayName || "user"}`}
               >
                 {contactText}
-              </button>
+              </button> */}
             </div>
           )}
         </div>

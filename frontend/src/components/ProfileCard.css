@@ -15,12 +15,12 @@
 }
 
 .pc-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
-  border: 1px solid rgba(240, 185, 11, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--card-radius);
   padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -28,8 +28,8 @@
 
 .pc-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-  border-color: rgba(240, 185, 11, 0.4);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(240, 185, 11, 0.1);
+  border-color: rgba(240, 185, 11, 0.3);
 }
 
 .pc-card::before {
@@ -74,7 +74,7 @@
 .pc-details h3 {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1a1a1a;
+  color: #f5f5f5;
   margin: 0 0 0.5rem 0;
   line-height: 1.2;
 }
@@ -108,11 +108,12 @@
   background: rgba(240, 185, 11, 0.15);
   border-color: rgba(240, 185, 11, 0.3);
   transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(240, 185, 11, 0.2);
 }
 
 .pc-stat-label {
   font-size: 0.75rem;
-  color: #666;
+  color: #8a8a8b;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -128,8 +129,8 @@
 }
 
 .pc-user-info {
-  background: rgba(240, 185, 11, 0.08);
-  border: 1px solid rgba(240, 185, 11, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   padding: 1.25rem;
   display: flex;
@@ -139,8 +140,9 @@
 }
 
 .pc-user-info:hover {
-  background: rgba(240, 185, 11, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(240, 185, 11, 0.25);
+  box-shadow: 0 4px 15px rgba(240, 185, 11, 0.1);
 }
 
 .pc-user-details {
@@ -175,13 +177,13 @@
 .pc-handle {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #f5f5f5;
   line-height: 1;
 }
 
 .pc-status {
   font-size: 0.8rem;
-  color: #666;
+  color: #8a8a8b;
   line-height: 1;
 }
 
@@ -198,7 +200,7 @@
 
 .pc-balance-usd {
   font-size: 0.75rem;
-  color: #888;
+  color: #6a6a6b;
   line-height: 1;
   margin-top: 0.125rem;
 }
@@ -210,7 +212,7 @@
   padding: 0.75rem 1.5rem;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #0a0a0b;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;

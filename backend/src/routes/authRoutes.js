@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateWallet, verifyAuth } = require('../middleware/auth');
-const { supabase } = require('../config/supabase');
+const { supabase } = require('../config/database');
 const router = express.Router();
 
 // POST /api/auth/wallet - Authenticate with wallet signature
