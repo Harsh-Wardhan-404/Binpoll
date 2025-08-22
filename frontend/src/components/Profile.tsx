@@ -110,8 +110,6 @@ const Profile: React.FC = () => {
                     contactText="Edit Profile"
                     avatarUrl={profile.avatarUrl}
                     showUserInfo={true}
-                    enableTilt={false}
-                    enableMobileTilt={false}
                     onContactClick={() => console.log('Edit profile clicked')}
                   />
                 </div>
