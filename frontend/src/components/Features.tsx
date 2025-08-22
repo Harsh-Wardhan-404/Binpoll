@@ -111,57 +111,57 @@ export const Features = () => {
   const features = [
     {
       icon: FiShield,
-      title: "Decentralized & Secure",
-      description: "Built on BNB Chain with smart contracts ensuring transparent and tamper-proof predictions.",
+      title: "Credibility Based",
+      description: "Your expertise and track record determine your voting weight and influence.",
       color: "text-blue-400",
       bg: "from-blue-400/10 to-blue-600/5"
     },
     {
       icon: FiZap,
-      title: "Lightning Fast",
-      description: "Instant transactions and real-time updates with low gas fees on BNB testnet.",
+      title: "Instant Recognition",
+      description: "Get immediate feedback and rewards for your valuable insights and decisions.",
       color: "text-primary-400",
       bg: "from-primary-400/10 to-primary-600/5"
     },
     {
       icon: FiTrendingUp,
-      title: "Market Analytics",
-      description: "Advanced analytics and insights to help you make informed predictions.",
+      title: "Knowledge Analytics",
+      description: "Track your expertise growth and see how your insights impact outcomes.",
       color: "text-green-400",
       bg: "from-green-400/10 to-green-600/5"
     },
     {
       icon: FiUsers,
-      title: "Community Driven",
-      description: "Join a vibrant community of predictors and benefit from collective wisdom.",
+      title: "Expert Community",
+      description: "Connect with knowledgeable individuals who value informed decision-making.",
       color: "text-purple-400",
       bg: "from-purple-400/10 to-purple-600/5"
     },
     {
       icon: FiLock,
-      title: "Non-Custodial",
-      description: "Your funds remain in your wallet. We never hold or control your assets.",
+      title: "Privacy Protected",
+      description: "Your personal insights and voting patterns remain confidential and secure.",
       color: "text-orange-400",
       bg: "from-orange-400/10 to-orange-600/5"
     },
     {
       icon: FiBarChart2,
-      title: "Real-time Data",
-      description: "Live market data and odds updating in real-time for better decision making.",
+      title: "Insight Analytics",
+      description: "Detailed analytics to help you understand and improve your decision-making skills.",
       color: "text-cyan-400",
       bg: "from-cyan-400/10 to-cyan-600/5"
     },
     {
       icon: FiGlobe,
-      title: "Global Markets",
-      description: "Predict outcomes from around the world across multiple categories.",
+      title: "Diverse Topics",
+      description: "Share your expertise across technology, politics, sports, and more categories.",
       color: "text-pink-400",
       bg: "from-pink-400/10 to-pink-600/5"
     },
     {
       icon: FiAward,
-      title: "Reward System",
-      description: "Earn rewards for accurate predictions and active community participation.",
+      title: "Recognition System",
+      description: "Build your reputation and earn recognition for your valuable insights.",
       color: "text-primary-400",
       bg: "from-primary-400/10 to-primary-600/5"
     }
@@ -185,10 +185,10 @@ export const Features = () => {
         
         <div className="relative z-10 text-center">
           <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-8">
-            <span className="text-gradient">Experience the Magic</span>
+            <span className="text-gradient">Share Your Knowledge</span>
           </h2>
           <p className="text-xl text-secondary-300 max-w-2xl mx-auto">
-            Interactive prediction markets powered by advanced blockchain technology
+            Turn your expertise into rewards through informed community decisions
           </p>
         </div>
       </section>
@@ -203,11 +203,10 @@ export const Features = () => {
         <div className="container-custom relative z-10">
           <div className="text-center mb-20">
             <h2 className="feature-title text-5xl md:text-6xl font-display font-bold mb-6 overflow-hidden">
-              <span className="text-gradient">Powerful Features</span>
+              <span className="text-gradient">Knowledge-Based Platform</span>
             </h2>
             <p className="text-xl text-secondary-300 max-w-3xl mx-auto leading-relaxed">
-              Experience the future of prediction markets with cutting-edge blockchain technology
-              and user-centric design.
+              A platform where your expertise and informed decisions are valued and rewarded.
             </p>
           </div>
 

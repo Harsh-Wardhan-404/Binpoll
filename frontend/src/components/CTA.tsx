@@ -16,7 +16,7 @@ export const CTA = () => {
       const titleEl = document.querySelector('.cta-title h2');
       if (titleEl && titleText) {
         titleEl.innerHTML = '';
-        titleText.split(' ').forEach((word, index) => {
+        titleText.split(' ').forEach((word) => {
           const span = document.createElement('span');
           span.textContent = word + ' ';
           span.className = 'inline-block';
@@ -102,13 +102,13 @@ export const CTA = () => {
       <div className="container-custom text-center max-w-4xl mx-auto relative z-10">
         <div className="cta-title mb-12">
           <h2 className="text-5xl md:text-7xl font-display font-bold mb-8 leading-tight">
-            Shape the Future with{' '}
-            <span className="text-gradient">Decentralized Predictions</span>
+            Turn Your Knowledge Into{' '}
+            <span className="text-gradient">Recognition & Rewards</span>
           </h2>
 
           <p className="text-xl md:text-2xl text-secondary-300 mb-12 leading-relaxed max-w-3xl mx-auto">
-            Join thousands of users already earning rewards through accurate predictions. 
-            The future of prediction markets is here, and it's powered by you.
+            Join a community of experts who value informed decision-making and share your insights 
+            to earn recognition and rewards for your expertise.
           </p>
         </div>
 
@@ -142,7 +142,7 @@ export const CTA = () => {
             { value: "24/7", label: "Uptime", color: "text-blue-400" },
             { value: "0%", label: "Platform Fees", color: "text-primary-400" },
             { value: "∞", label: "Possibilities", color: "text-purple-400" }
-          ].map((item, index) => (
+          ].map((item) => (
             <div key={item.label} className="trust-item text-center group cursor-pointer">
               <div className={`text-3xl md:text-4xl font-bold ${item.color} mb-3 group-hover:scale-110 transition-all duration-300 group-hover:drop-shadow-lg`}>
                 {item.value}

@@ -342,18 +342,16 @@ export const useSimplePoll = (chainId?: number) => {
     });
   };
 
-  const voteOnPoll = (pollId: number, optionId: number) => {
+  const voteOnPoll = async (pollId: number, optionId: number) => {
     if (!entryFee) return;
     
-    vote({
+    return vote({
       address: contractAddress,
       abi: SIMPLE_POLL_ABI,
       functionName: 'vote',
       args: [BigInt(pollId), BigInt(optionId)],
       value: entryFee,
     });
-
-
   };
 
   const settlePollById = (pollId: number, winningOptionId: number) => {

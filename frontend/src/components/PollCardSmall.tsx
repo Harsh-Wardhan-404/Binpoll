@@ -22,11 +22,6 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
         percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
       }));
 
-  // Get the top option
-  const topOption = options.reduce((prev, current) => 
-    (current.votes > prev.votes) ? current : prev
-  );
-
   return (
     <motion.div
       className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 cursor-pointer group"
@@ -82,6 +77,18 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
         </div>
       </div>
 
+      {/* Credibility Requirements */}
+      {(poll.min_credibility_required && poll.min_credibility_required > 0) && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-xl border border-yellow-500/20">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-yellow-400">Min Credibility</span>
+            <span className="text-lg font-bold text-yellow-400">
+              {poll.min_credibility_required}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Pool Amount for Blockchain Polls */}
       {poll.is_on_chain && poll.total_pool && (
         <div className="mb-4 p-3 bg-gradient-to-r from-primary-500/10 to-primary-600/10 rounded-xl border border-primary-500/20">
@@ -94,24 +101,36 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
         </div>
       )}
 
-      {/* Top Option Preview */}
+      {/* Credibility & Knowledge Section */}
       <div className="bg-white/5 rounded-xl p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-white">Leading Option</span>
-          <span className="text-sm text-primary-400 font-bold">
-            {topOption.percentage.toFixed(1)}%
-          </span>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-white">Knowledge Required</span>
+          <div className="flex items-center space-x-1">
+            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs text-yellow-400 font-medium">Expert</span>
+          </div>
         </div>
-        <p className="text-sm text-secondary-300 line-clamp-1 mb-2">
-          {topOption.text}
-        </p>
-        <div className="w-full bg-white/10 rounded-full h-2">
-          <motion.div
-            className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${topOption.percentage}%` }}
-            transition={{ delay: 0.5 + index * 0.1, duration: 1 }}
-          />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-secondary-300">Voter Credibility</span>
+            <span className="text-xs text-primary-400 font-medium">
+              {poll.min_credibility_required || 0}+ Required
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-secondary-300">Voting Weight</span>
+            <span className="text-xs text-primary-400 font-medium">
+              {poll.voting_weight_multiplier || 1}x Multiplier
+            </span>
+          </div>
+          {poll.is_credibility_gated && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-secondary-300">Credibility Gated</span>
+              <span className="text-xs text-green-400 font-medium">✓ Enabled</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -123,9 +142,16 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
               {poll.users?.username?.charAt(0) || poll.creator?.name?.charAt(0) || 'U'}
             </span>
           </div>
-          <span className="text-xs text-secondary-300">
-            {poll.users?.username || poll.creator?.name || 'Unknown'}
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xs text-secondary-300">
+              {poll.users?.username || poll.creator?.name || 'Unknown'}
+            </span>
+            {poll.users?.credibility_score && (
+              <span className="text-xs text-yellow-400 font-medium">
+                Credibility: {poll.users.credibility_score}
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="flex items-center space-x-2 text-secondary-300">

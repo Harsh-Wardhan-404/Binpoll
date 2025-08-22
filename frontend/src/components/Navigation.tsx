@@ -4,16 +4,19 @@ import { HiMenu, HiX } from 'react-icons/hi';
 import { FaWallet } from 'react-icons/fa';
 import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
 import { gsap } from 'gsap';
+import { useLocation, useNavigate } from 'react-router-dom';
 import WalletConnectAuth from './WalletConnectAuth';
 
-interface NavigationProps {
-  onNavigate?: (page: 'home' | 'dashboard' | 'profile') => void;
-  currentPage?: 'home' | 'dashboard' | 'profile';
-}
-
-export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps) => {
+export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Determine current page based on pathname
+  const currentPage = location.pathname === '/' ? 'home' : 
+                     location.pathname === '/dashboard' ? 'dashboard' : 
+                     location.pathname === '/profile' ? 'profile' : 'home';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,8 +34,6 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
     { label: 'My Stats', href: '#stats' },
     { label: 'Activity', href: '#activity' },
   ] : [];
-
-
 
   const navVariants = {
     hidden: { y: -100, opacity: 0 },
@@ -74,7 +75,7 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
             className="flex items-center space-x-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate?.('home')}
+            onClick={() => navigate('/')}
             style={{ cursor: 'pointer' }}
           >
             <div className="w-10 h-10 bg-golden-gradient rounded-lg flex items-center justify-center">
@@ -104,67 +105,70 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
             </div>
           )}
 
-                     {/* Navigation Buttons */}
-           <div className="hidden md:flex items-center space-x-4">
-                                                 {/* Page Navigation */}
-                      <div className="flex items-center space-x-2">
-                        <motion.button
-                          onClick={() => onNavigate?.(currentPage === 'dashboard' ? 'home' : 'dashboard')}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                            currentPage === 'dashboard'
-                              ? 'bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/25'
-                              : 'bg-white/5 text-secondary-300 hover:text-primary-400 border border-white/10'
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {currentPage === 'dashboard' ? (
-                            <>
-                              <FiHome className="w-4 h-4" />
-                              <span>Home</span>
-                            </>
-                          ) : (
-                            <>
-                              <FiBarChart2 className="w-4 h-4" />
-                              <span>Dashboard</span>
-                            </>
-                          )}
-                        </motion.button>
+          {/* Desktop Action Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Navigation Buttons */}
+            <motion.button
+              onClick={() => navigate('/')}
+              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${
+                currentPage === 'home'
+                  ? 'bg-primary-500 text-secondary-900'
+                  : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiHome className="w-4 h-4" />
+              <span>Home</span>
+            </motion.button>
 
-                        <motion.button
-                          onClick={() => onNavigate?.('profile')}
-                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
-                            currentPage === 'profile'
-                              ? 'bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/25'
-                              : 'bg-white/5 text-secondary-300 hover:text-primary-400 border border-white/10'
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          <span>Profile</span>
-                        </motion.button>
-                      </div>
+            <motion.button
+              onClick={() => navigate('/dashboard')}
+              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${
+                currentPage === 'dashboard'
+                  ? 'bg-primary-500 text-secondary-900'
+                  : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiBarChart2 className="w-4 h-4" />
+              <span>Dashboard</span>
+            </motion.button>
 
-             {/* Wallet Connection */}
-             <motion.div
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               transition={{ delay: 0.6 }}
-             >
-               <WalletConnectAuth />
-             </motion.div>
-           </div>
+            {/* Wallet Connect */}
+            <WalletConnectAuth />
+          </div>
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-secondary-200 hover:text-primary-400 transition-colors duration-300"
+            className="md:hidden p-2 text-secondary-300 hover:text-primary-400 transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             whileTap={{ scale: 0.95 }}
           >
-            {isOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
+            <AnimatePresence mode="wait">
+              {isOpen ? (
+                <motion.div
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <HiX className="w-6 h-6" />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: -90, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <HiMenu className="w-6 h-6" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.button>
         </div>
 
@@ -176,81 +180,65 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
               initial="closed"
               animate="open"
               exit="closed"
-              className="md:hidden bg-secondary-800/95 backdrop-blur-lg border-t border-primary-500/20"
+              className="md:hidden overflow-hidden"
             >
-                             <div className="py-6 space-y-4">
-                 {(currentPage === 'home' || currentPage === 'profile') && navItems.map((item, index) => (
-                   <motion.a
-                     key={item.label}
-                     href={item.href}
-                     className="block px-4 py-2 text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
-                     onClick={() => setIsOpen(false)}
-                     initial={{ opacity: 0, x: -20 }}
-                     animate={{ opacity: 1, x: 0 }}
-                     transition={{ delay: index * 0.1 }}
-                   >
-                     {item.label}
-                   </motion.a>
-                 ))}
-                                                                      {/* Mobile Navigation Buttons */}
-                   <div className="flex space-x-2 px-4 mb-4">
-                     <motion.button
-                       onClick={() => {
-                         onNavigate?.(currentPage === 'dashboard' ? 'home' : 'dashboard');
-                         setIsOpen(false);
-                       }}
-                       className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                         currentPage === 'dashboard'
-                           ? 'bg-primary-500 text-secondary-900'
-                           : 'bg-white/5 text-secondary-300 border border-white/10'
-                       }`}
-                       initial={{ opacity: 0, y: 20 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       transition={{ delay: 0.2 }}
-                     >
-                       {currentPage === 'dashboard' ? (
-                         <>
-                           <FiHome className="w-4 h-4" />
-                           <span>Home</span>
-                         </>
-                       ) : (
-                         <>
-                           <FiBarChart2 className="w-4 h-4" />
-                           <span>Dashboard</span>
-                         </>
-                       )}
-                     </motion.button>
+              <div className="py-6 space-y-4">
+                {/* Mobile Navigation Items */}
+                {navItems.map((item, index) => (
+                  <motion.a
+                    key={item.label}
+                    href={item.href}
+                    className="block text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {item.label}
+                  </motion.a>
+                ))}
 
-                     <motion.button
-                       onClick={() => {
-                         onNavigate?.('profile');
-                         setIsOpen(false);
-                       }}
-                       className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
-                         currentPage === 'profile'
-                           ? 'bg-primary-500 text-secondary-900'
-                           : 'bg-white/5 text-secondary-300 border border-white/10'
-                       }`}
-                       initial={{ opacity: 0, y: 20 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       transition={{ delay: 0.3 }}
-                     >
-                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                       </svg>
-                       <span>Profile</span>
-                     </motion.button>
-                   </div>
+                {/* Mobile Action Buttons */}
+                <div className="pt-4 space-y-3 border-t border-secondary-800">
+                  <motion.button
+                    onClick={() => {
+                      navigate('/');
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      currentPage === 'home'
+                        ? 'bg-primary-500 text-secondary-900'
+                        : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FiHome className="w-4 h-4" />
+                    <span>Home</span>
+                  </motion.button>
 
-                <motion.div
-                  className="w-full mx-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <WalletConnectAuth className="w-full justify-center" />
-                </motion.div>
+                  <motion.button
+                    onClick={() => {
+                      navigate('/dashboard');
+                      setIsOpen(false);
+                    }}
+                    className={`w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      currentPage === 'dashboard'
+                        ? 'bg-primary-500 text-secondary-900'
+                        : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FiBarChart2 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </motion.button>
+
+                  {/* Mobile Wallet Connect */}
+                  <div className="pt-2">
+                    <WalletConnectAuth />
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

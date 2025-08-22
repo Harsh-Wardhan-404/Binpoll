@@ -21,27 +21,27 @@ export const Stats = () => {
   const stats = [
     {
       icon: FiTrendingUp,
-      value: '$2.5M+',
-      label: 'Total Volume Locked',
-      description: 'Secured in smart contracts'
+      value: '10K+',
+      label: 'Expert Insights',
+      description: 'Valuable decisions shared'
     },
     {
       icon: FiUsers,
-      value: '150K+',
-      label: 'Active Predictions',
-      description: 'Across all markets'
+      value: '5K+',
+      label: 'Knowledge Contributors',
+      description: 'Active community members'
     },
     {
       icon: FiShield,
-      value: '89%',
-      label: 'Accuracy Rate',
-      description: 'Community prediction success'
+      value: '95%',
+      label: 'Credibility Score',
+      description: 'Average user expertise level'
     },
     {
       icon: FiZap,
-      value: '50K+',
-      label: 'Global Users',
-      description: 'From 100+ countries'
+      value: '25K+',
+      label: 'Global Experts',
+      description: 'From 50+ countries'
     }
   ];
 
@@ -50,10 +50,10 @@ export const Stats = () => {
       <div className="container-custom">
         <div className="text-center mb-16">
           <h2 className="stats-title text-5xl md:text-6xl font-display font-bold mb-6">
-            <span className="text-gradient">Proven Results</span>
+            <span className="text-gradient">Community Impact</span>
           </h2>
           <p className="text-xl text-secondary-300 max-w-3xl mx-auto">
-            Join thousands of users who trust Binpoll with their predictions and investments.
+            Join thousands of experts who share their knowledge and earn recognition for their insights.
           </p>
         </div>
 

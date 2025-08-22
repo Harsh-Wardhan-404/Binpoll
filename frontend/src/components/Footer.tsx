@@ -9,9 +9,9 @@ import { FaTwitter, FaGithub, FaDiscord } from 'react-icons/fa';
 export const Footer = () => {
   const footerSections = [
     {
-      title: 'Product',
+      title: 'Platform',
       links: [
-        { label: 'Markets', href: '#markets' },
+        { label: 'Topics', href: '#topics' },
         { label: 'Analytics', href: '#analytics' },
         { label: 'API', href: '#api' },
         { label: 'Roadmap', href: '#roadmap' }
@@ -79,8 +79,8 @@ export const Footer = () => {
             </motion.div>
 
             <p className="text-secondary-400 mb-8 leading-relaxed max-w-md">
-              Empowering the future of prediction markets through blockchain technology. 
-              Join our community of predictors and shape tomorrow, today.
+              Empowering knowledge sharing and expertise recognition through blockchain technology. 
+              Join our community of experts and earn recognition for your insights.
             </p>
 
             {/* Social links */}
@@ -130,15 +130,15 @@ export const Footer = () => {
         {/* Bottom section */}
         <div className="border-t border-secondary-800 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-secondary-500 text-sm">
-            © 2024 Binpoll. Built with ❤️ for the future of prediction markets.
+            © 2024 Binpoll. Built with ❤️ for knowledge sharing and expertise recognition.
           </div>
 
           <div className="flex items-center space-x-6 text-sm text-secondary-500">
             <span>Powered by BNB Chain</span>
             <div className="w-1 h-1 bg-secondary-500 rounded-full"></div>
-            <span>Secured by Smart Contracts</span>
+            <span>Credibility Based</span>
             <div className="w-1 h-1 bg-secondary-500 rounded-full"></div>
-            <span>Community Governed</span>
+            <span>Expert Community</span>
           </div>
         </div>
       </div>

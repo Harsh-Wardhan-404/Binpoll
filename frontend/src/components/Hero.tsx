@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { FiArrowRight, FiLock, FiShield } from 'react-icons/fi';
+import { FiShield } from 'react-icons/fi';
 import Threads from './Threads';
 import DecryptedText from './DecryptedText';
 
@@ -60,15 +60,15 @@ export const Hero = () => {
           {/* Minimal Main Title */}
           <div className="space-y-6">
             <h1 className="text-4xl md:text-6xl font-display font-bold text-white leading-tight">
-              Next-Gen <span className="text-gradient">Prediction Markets</span>
+              Earn Through <span className="text-gradient">Knowledge & Insight</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-secondary-300 max-w-2xl mx-auto leading-relaxed">
               <DecryptedText
-                text="Decentralized • Transparent • Immutable"
+                text="Share Your Expertise • Make Informed Decisions • Build Credibility"
                 speed={80}
                 maxIterations={12}
-                characters="DECENTRALIZED•░▒▓█"
+                characters="EXPERTISE•░▒▓█"
                 className="font-mono font-bold text-primary-300"
                 animateOn="view"
                 revealDirection="center"

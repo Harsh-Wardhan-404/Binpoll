@@ -29,20 +29,20 @@ export const HowItWorks = () => {
     {
       number: 2,
       icon: FiSearch,
-      title: "Browse Markets",
-      description: "Explore various prediction markets across different categories and topics."
+      title: "Browse Topics",
+      description: "Explore various topics and questions across different categories that interest you."
     },
     {
       number: 3,
       icon: FiTrendingUp,
-      title: "Make Predictions",
-      description: "Stake test BNB on your chosen outcomes and watch the markets unfold."
+      title: "Share Your Insights",
+      description: "Use your expertise to make informed decisions and share your valuable perspective."
     },
     {
       number: 4,
       icon: FiAward,
-      title: "Earn Rewards",
-      description: "Collect rewards proportional to your stake when your predictions are correct."
+      title: "Earn Recognition",
+      description: "Build your credibility and earn rewards when your insights prove valuable."
     }
   ];
 
@@ -51,11 +51,11 @@ export const HowItWorks = () => {
       <div className="container-custom">
         <div className="text-center mb-20">
           <h2 className="how-title text-5xl md:text-6xl font-display font-bold mb-6">
-            How <span className="text-gradient">Binpoll</span> Works
+            How <span className="text-gradient">Knowledge Rewards</span> Work
           </h2>
           <p className="text-xl text-secondary-300 max-w-3xl mx-auto">
-            Get started with prediction markets in just four simple steps.
-            It's designed to be intuitive for both beginners and experts.
+            Start sharing your expertise and earning recognition in just four simple steps.
+            Designed for both newcomers and experienced professionals.
           </p>
         </div>
 

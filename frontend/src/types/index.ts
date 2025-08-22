@@ -45,6 +45,15 @@ export interface Poll {
   creator_credibility_bonus?: number;
   min_credibility_required?: number;
   max_voters?: number | null;
+  // Updated users field to include credibility
+  users?: {
+    id: string;
+    username: string;
+    wallet_address: string;
+    avatar_url: string;
+    credibility_score?: number;
+    reputation_level?: string;
+  };
 }
 
 // Detailed poll data from API
