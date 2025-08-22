@@ -11,6 +11,7 @@ import { Footer } from './components/Footer';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 
+
 function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'profile'>('home');
   

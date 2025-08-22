@@ -10,19 +10,23 @@ import CreatePollModal from './CreatePollModal';
 import WalletConnectAuth from './WalletConnectAuth';
 import { usePolls } from '../hooks/usePolls';
 import { useAuth } from '../hooks/useAuth';
+import { useSimplePoll } from '../hooks/useSimplePoll';
 import type { Poll } from '../types';
-
-
 
 const Dashboard: React.FC = () => {
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [allPolls, setAllPolls] = useState<Poll[]>([]);
+  const [blockchainPollsLoading, setBlockchainPollsLoading] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // API hooks
-  const { polls, loading: isLoading, fetchPolls, createPoll, voteOnPoll } = usePolls();
+  const { polls, loading: isLoading, fetchPolls, voteOnPoll } = usePolls();
+
+  // Blockchain hooks
+  const { getAllPolls } = useSimplePoll();
 
   // Wagmi hooks
   const { isConnected, address } = useAccount();
@@ -32,14 +36,72 @@ const Dashboard: React.FC = () => {
   // Auth hook
   const { isAuthenticated } = useAuth();
 
-  const categories = ['All', 'Technology', 'Politics', 'Sports', 'Entertainment', 'Science', 'Lifestyle'];
+  const categories = ['All', 'Technology', 'Politics', 'Sports', 'Entertainment', 'Science', 'Lifestyle', 'Blockchain'];
+
+  // Fetch all polls (API + Blockchain)
+  const fetchAllPolls = async () => {
+    console.log('🔄 Fetching all polls...');
+    
+    // Fetch API polls first
+    await fetchPolls();
+  };
+
+  // Load blockchain polls when connected to correct network
+  const loadBlockchainPolls = async () => {
+    if (isConnected && isCorrectNetwork && getAllPolls) {
+      setBlockchainPollsLoading(true);
+      try {
+        const blockchainPolls = await getAllPolls();
+        console.log('🔗 Blockchain polls:', blockchainPolls);
+        
+        // Convert blockchain polls to match our Poll interface
+        const formattedBlockchainPolls: Poll[] = blockchainPolls.map(poll => ({
+          id: `blockchain-${poll.id}`,
+          title: poll.title,
+          description: poll.description,
+          options: poll.options.map((option: string) => ({
+            text: option,
+            votes: 0, // TODO: Get actual vote counts
+            percentage: 0
+          })),
+          totalVotes: 0, // TODO: Get total vote count
+          endDate: new Date(Number(poll.endTime) * 1000).toISOString(),
+          isActive: !poll.settled && new Date(Number(poll.endTime) * 1000) > new Date(),
+          category: 'Blockchain', // Default category for blockchain polls
+          creator: {
+            name: poll.creator,
+            avatar: ''
+          },
+          isBlockchain: true,
+          blockchainId: poll.id
+        }));
+        
+        // Combine API polls and blockchain polls
+        setAllPolls([...polls, ...formattedBlockchainPolls]);
+      } catch (error) {
+        console.error('❌ Error fetching blockchain polls:', error);
+        setAllPolls(polls); // Fallback to API polls only
+      } finally {
+        setBlockchainPollsLoading(false);
+      }
+    } else {
+      setAllPolls(polls);
+    }
+  };
 
   // Load polls from API only when authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      fetchPolls();
+      fetchAllPolls();
     }
   }, [isAuthenticated]); // Only fetch when authentication status changes
+
+  // Load blockchain polls when wallet/network changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadBlockchainPolls();
+    }
+  }, [polls, isConnected, isCorrectNetwork, chainId, isAuthenticated]);
 
   useEffect(() => {
     if (dashboardRef.current) {
@@ -60,7 +122,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = polls;
+    let filtered = allPolls;
 
     // Filter by search query
     if (searchQuery) {
@@ -77,7 +139,7 @@ const Dashboard: React.FC = () => {
     }
 
     setFilteredPolls(filtered);
-  }, [polls, searchQuery, selectedCategory]);
+  }, [allPolls, searchQuery, selectedCategory]);
 
   const handleVote = async (pollId: string, optionIndex: number) => {
     if (!address) return;
@@ -90,15 +152,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Transform API poll data to match PollCard interface
+  // Transform poll data to match PollCard interface
   const transformPollForCard = (poll: Poll) => {
     const totalVotes = poll.totalVotes || 0;
-    const options = poll.options.map((option, index) => ({
-      id: `${poll.id}-${index}`,
-      text: option,
-      votes: poll.optionVotes?.[index] || 0,
-      percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
-    }));
+    
+    // Handle different poll formats (API vs Blockchain)
+    const options = poll.isBlockchain 
+      ? poll.options.map((option, index) => ({
+          id: `${poll.id}-${index}`,
+          text: option.text,
+          votes: option.votes,
+          percentage: option.percentage
+        }))
+      : poll.options.map((option, index) => ({
+          id: `${poll.id}-${index}`,
+          text: typeof option === 'string' ? option : option.text,
+          votes: poll.optionVotes?.[index] || 0,
+          percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
+        }));
 
     return {
       id: poll.id,
@@ -106,10 +177,10 @@ const Dashboard: React.FC = () => {
       description: poll.description,
       options,
       totalVotes,
-      endDate: poll.end_time,
-      isActive: poll.is_active && new Date(poll.end_time) > new Date(),
+      endDate: poll.endDate || poll.end_time || '',
+      isActive: poll.isActive ?? (poll.is_active ? new Date(poll.end_time || '') > new Date() : false),
       category: poll.category,
-      creator: {
+      creator: poll.creator || {
         name: poll.users?.username || 'Unknown',
         avatar: poll.users?.avatar_url || ''
       }
@@ -133,13 +204,13 @@ const Dashboard: React.FC = () => {
         
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="text-center max-w-2xl mx-auto px-6">
-                         <ScrollVelocity
-               texts={['Poll Dashboard', 'Connect to Access']}
-               velocity={50}
-               className="text-gradient text-3xl"
-               parallaxClassName="mb-6"
-               scrollerClassName="text-gradient text-3xl"
-             />
+            <ScrollVelocity
+              texts={['Poll Dashboard', 'Connect to Access']}
+              velocity={50}
+              className="text-gradient text-3xl"
+              parallaxClassName="mb-6"
+              scrollerClassName="text-gradient text-3xl"
+            />
             <p className="text-xl text-secondary-300 mb-8 leading-relaxed">
               Connect your wallet and authenticate to access the full polling experience. 
               Create polls, vote on predictions, and participate in the community.
@@ -186,7 +257,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (isLoading) {
+  if (isLoading || blockchainPollsLoading) {
     return (
       <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
         <div className="text-center">
@@ -207,18 +278,18 @@ const Dashboard: React.FC = () => {
         {/* Header Section */}
         <section className="pt-20 pb-16">
           <div className="container-custom">
-                         <div className="text-center mb-12">
-               <ScrollVelocity
-                 texts={['Poll Dashboard', 'Vote & Decide']}
-                 velocity={50}
-                 className="text-gradient text-3xl"
-                 parallaxClassName="mb-6"
-                 scrollerClassName="text-gradient text-3xl"
-               />
-               <p className="text-lg text-secondary-300 max-w-2xl mx-auto leading-relaxed">
-                 Discover and participate in polls from around the world. Your voice matters in shaping opinions and decisions.
-               </p>
-             </div>
+            <div className="text-center mb-12">
+              <ScrollVelocity
+                texts={['Poll Dashboard', 'Vote & Decide']}
+                velocity={50}
+                className="text-gradient text-3xl"
+                parallaxClassName="mb-6"
+                scrollerClassName="text-gradient text-3xl"
+              />
+              <p className="text-lg text-secondary-300 max-w-2xl mx-auto leading-relaxed">
+                Discover and participate in polls from around the world. Your voice matters in shaping opinions and decisions.
+              </p>
+            </div>
 
             {/* Search and Filters */}
             <div className="max-w-4xl mx-auto mb-12">
@@ -261,69 +332,67 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
 
-                 {/* Main Content */}
-         <section className="pb-20">
-           <div className="container-custom">
-             <div className="mb-8">
-               <h2 className="text-2xl font-bold text-white mb-2">
-                 {filteredPolls.length} Poll{filteredPolls.length !== 1 ? 's' : ''} Found
-               </h2>
-               <p className="text-secondary-400">
-                 {searchQuery && `Searching for: "${searchQuery}"`}
-                 {selectedCategory !== 'All' && ` • Category: ${selectedCategory}`}
-               </p>
-             </div>
+        {/* Main Content */}
+        <section className="pb-20">
+          <div className="container-custom">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                {filteredPolls.length} Poll{filteredPolls.length !== 1 ? 's' : ''} Found
+              </h2>
+              <p className="text-secondary-400">
+                {searchQuery && `Searching for: "${searchQuery}"`}
+                {selectedCategory !== 'All' && ` • Category: ${selectedCategory}`}
+              </p>
+            </div>
 
-             <AnimatePresence mode="wait">
-               {filteredPolls.length > 0 ? (
-                 <motion.div
-                   key={`${searchQuery}-${selectedCategory}`}
-                   initial={{ opacity: 0 }}
-                   animate={{ opacity: 1 }}
-                   exit={{ opacity: 0 }}
-                   transition={{ duration: 0.3 }}
-                   className="grid gap-6 max-w-4xl mx-auto"
-                 >
-                   {filteredPolls.map((poll, index) => (
-                     <motion.div
-                       key={poll.id}
-                       initial={{ opacity: 0, y: 50 }}
-                       animate={{ opacity: 1, y: 0 }}
-                       transition={{ duration: 0.6, delay: index * 0.1 }}
-                     >
-                       <PollCard
-                         {...transformPollForCard(poll)}
-                         onVote={(pollId, optionId) => {
-                           // Extract option index from optionId (format: "pollId-index")
-                           const optionIndex = parseInt(optionId.split('-')[1]);
-                           handleVote(pollId, optionIndex);
-                         }}
-                       />
-                     </motion.div>
-                   ))}
-                 </motion.div>
-               ) : (
-                 <motion.div
-                   initial={{ opacity: 0, scale: 0.9 }}
-                   animate={{ opacity: 1, scale: 1 }}
-                   className="text-center py-20"
-                 >
-                   <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
-                     <svg className="w-12 h-12 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
-                     </svg>
-                   </div>
-                   <h3 className="text-xl font-semibold text-white mb-2">No polls found</h3>
-                   <p className="text-secondary-400">
-                     Try adjusting your search or filter criteria
-                   </p>
-                 </motion.div>
-               )}
-             </AnimatePresence>
-           </div>
-         </section>
-
-        
+            <AnimatePresence mode="wait">
+              {filteredPolls.length > 0 ? (
+                <motion.div
+                  key={`${searchQuery}-${selectedCategory}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="grid gap-6 max-w-4xl mx-auto"
+                >
+                  {filteredPolls.map((poll, index) => (
+                    <motion.div
+                      key={poll.id}
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: index * 0.1 }}
+                    >
+                      <PollCard
+                        {...transformPollForCard(poll)}
+                        onVote={(pollId, optionId) => {
+                          // Extract option index from optionId (format: "pollId-index")
+                          const optionIndex = parseInt(optionId.split('-')[1]);
+                          handleVote(pollId, optionIndex);
+                        }}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-20"
+                >
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">No polls found</h3>
+                  <p className="text-secondary-400">
+                    Try adjusting your search or filter criteria
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </section>
       </div>
 
       {/* Create Poll Modal */}

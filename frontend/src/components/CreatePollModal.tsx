@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiX, HiPlus, HiMinus } from 'react-icons/hi';
 import { FiClock, FiEdit3, FiUsers } from 'react-icons/fi';
@@ -16,11 +16,28 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [duration, setDuration] = useState(24);
+  const [creatorDeposit, setCreatorDeposit] = useState('0.002'); // Default minimum deposit
+  const [useBlockchain, setUseBlockchain] = useState(true);
 
   const chainId = useChainId();
   const { isConnected, address } = useAccount();
-  const { createNewPoll, isCreatingPoll, entryFee, createPollError } = useSimplePoll(chainId);
+  const { 
+    createNewPoll, 
+    isCreatingPoll, 
+    entryFee, 
+    minCreatorDeposit, 
+    createPollError,
+    createPollTxHash
+  } = useSimplePoll(chainId);
   const { createPoll, loading: isCreatingApiPoll } = usePolls();
+
+  // Close modal when blockchain transaction is confirmed
+  useEffect(() => {
+    if (createPollTxHash) {
+      handleClose();
+      alert('Poll created successfully on the blockchain!');
+    }
+  }, [createPollTxHash]);
 
   const addOption = () => {
     if (options.length < 5) {
@@ -59,24 +76,52 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
       return;
     }
 
-    try {
-      // Create poll using API
-      const newPoll = await createPoll({
-        title: title.trim(),
-        description: description.trim(),
-        options: validOptions,
-        durationHours: duration,
-        category: 'General'
-      });
+    // Validate creator deposit
+    const depositAmount = parseFloat(creatorDeposit);
+    const minDeposit = parseFloat(minCreatorDeposit);
+    if (useBlockchain && depositAmount < minDeposit) {
+      alert(`Creator deposit must be at least ${minCreatorDeposit} BNB`);
+      return;
+    }
 
-      if (newPoll) {
-        // Close modal and reset form
-        handleClose();
-        
-        // Show success message
-        alert('Poll created successfully! It will appear in the dashboard.');
+    try {
+      if (useBlockchain) {
+        // Create poll on blockchain with creator deposit
+        try {
+          createNewPoll(
+            title.trim(),
+            description.trim(),
+            validOptions,
+            duration,
+            creatorDeposit
+          );
+          
+          // Don't close modal immediately - wait for transaction to be initiated
+          alert('Please check your wallet and confirm the transaction to create your poll.');
+        } catch (contractError) {
+          console.error('Contract error:', contractError);
+          alert(`Failed to create blockchain poll: ${contractError.message}`);
+          return;
+        }
       } else {
-        alert('Failed to create poll. Please try again.');
+        // Create poll using API only
+        const newPoll = await createPoll({
+          title: title.trim(),
+          description: description.trim(),
+          options: validOptions,
+          durationHours: duration,
+          category: 'General'
+        });
+
+        if (newPoll) {
+          // Close modal and reset form
+          handleClose();
+          
+          // Show success message
+          alert('Poll created successfully! It will appear in the dashboard.');
+        } else {
+          alert('Failed to create poll. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error creating poll:', error);
@@ -89,6 +134,8 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
     setDescription('');
     setOptions(['', '']);
     setDuration(24);
+    setCreatorDeposit('0.002');
+    setUseBlockchain(true);
   };
 
   const handleClose = () => {
@@ -237,19 +284,121 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 </div>
               </div>
 
-              {/* API Info */}
-              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <FiUsers className="w-5 h-5 text-green-400" />
-                  <span className="text-green-300 font-medium">API Integration</span>
-                </div>
-                <div className="text-sm text-secondary-300 space-y-1">
-                  <div>• Poll stored in database via API</div>
-                  <div>• Real-time vote counting</div>
-                  <div>• Persistent data across sessions</div>
-                  <div>• Ready for blockchain integration</div>
+              {/* Blockchain Toggle */}
+              <div>
+                <label className="block text-sm font-medium text-secondary-300 mb-4">
+                  Poll Type
+                </label>
+                <div className="flex space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setUseBlockchain(true)}
+                    className={`flex-1 p-4 border rounded-lg transition-all ${
+                      useBlockchain
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-white/10 bg-white/5 text-secondary-300 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="font-medium mb-1">🚀 Blockchain Poll</div>
+                      <div className="text-xs opacity-80">
+                        With rewards & creator deposit
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseBlockchain(false)}
+                    className={`flex-1 p-4 border rounded-lg transition-all ${
+                      !useBlockchain
+                        ? 'border-primary-500 bg-primary-500/10 text-primary-300'
+                        : 'border-white/10 bg-white/5 text-secondary-300 hover:border-white/20'
+                    }`}
+                  >
+                    <div className="text-center">
+                      <div className="font-medium mb-1">📊 Simple Poll</div>
+                      <div className="text-xs opacity-80">
+                        Database only, no deposits
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
+
+              {/* Creator Deposit (only for blockchain polls) */}
+              {useBlockchain && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary-300 mb-2">
+                    Creator Deposit
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1">
+                        <input
+                          type="number"
+                          value={creatorDeposit}
+                          onChange={(e) => setCreatorDeposit(e.target.value)}
+                          min={minCreatorDeposit}
+                          step="0.001"
+                          className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-secondary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                          placeholder="0.002"
+                        />
+                      </div>
+                      <div className="text-secondary-300 font-medium">BNB</div>
+                    </div>
+                    <div className="text-xs text-secondary-400">
+                      Minimum: {minCreatorDeposit} BNB. This amount will be added to the reward pool.
+                    </div>
+                    
+                    {/* Quick Deposit Buttons */}
+                    <div className="flex space-x-2">
+                      {['0.002', '0.005', '0.01', '0.02'].map((amount) => (
+                        <button
+                          key={amount}
+                          type="button"
+                          onClick={() => setCreatorDeposit(amount)}
+                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                            creatorDeposit === amount
+                              ? 'border-primary-500 bg-primary-500/20 text-primary-300'
+                              : 'border-white/20 text-secondary-300 hover:border-white/40'
+                          }`}
+                        >
+                          {amount} BNB
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Poll Info */}
+              {useBlockchain ? (
+                <div className="bg-primary-500/10 border border-primary-500/20 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-2xl">🚀</span>
+                    <span className="text-primary-300 font-medium">Blockchain Prediction Market</span>
+                  </div>
+                  <div className="text-sm text-secondary-300 space-y-1">
+                    <div>• Voting fee: {entryFee} BNB per vote</div>
+                    <div>• Creator deposit: {creatorDeposit} BNB</div>
+                    <div>• Reward distribution: 85% to winners, 10% platform, 5% creator</div>
+                    <div>• Immutable and transparent on BSC</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <span className="text-2xl">📊</span>
+                    <span className="text-blue-300 font-medium">Simple Database Poll</span>
+                  </div>
+                  <div className="text-sm text-secondary-300 space-y-1">
+                    <div>• Free to create and vote</div>
+                    <div>• Stored in secure database</div>
+                    <div>• Real-time results</div>
+                    <div>• Perfect for opinion surveys</div>
+                  </div>
+                </div>
+              )}
 
               {/* Error Display */}
               {createPollError && (
@@ -271,10 +420,14 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreatingApiPoll || !isConnected}
+                  disabled={(useBlockchain ? isCreatingPoll : isCreatingApiPoll) || !isConnected}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {isCreatingApiPoll ? 'Creating Poll...' : 'Create Poll'}
+                  {useBlockchain ? (
+                    isCreatingPoll ? 'Creating Blockchain Poll...' : `Create Poll (${creatorDeposit} BNB)`
+                  ) : (
+                    isCreatingApiPoll ? 'Creating Poll...' : 'Create Simple Poll'
+                  )}
                 </button>
               </div>
             </form>

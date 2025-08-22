@@ -3,19 +3,35 @@ export interface Poll {
   id: string;
   title: string;
   description: string;
-  options: string[];
+  options: PollOption[];
   category: string;
-  end_time: string;
-  is_active: boolean;
-  total_votes: number;
-  optionVotes: number[];
+  end_time?: string;
+  endDate?: string;
+  is_active?: boolean;
+  isActive?: boolean;
+  total_votes?: number;
   totalVotes: number;
-  users: {
+  optionVotes?: number[];
+  users?: {
     id: string;
     username: string;
     wallet_address: string;
     avatar_url: string;
   };
+  creator?: {
+    name: string;
+    avatar: string;
+  };
+  // Blockchain specific fields
+  isBlockchain?: boolean;
+  blockchainId?: bigint;
+}
+
+export interface PollOption {
+  id?: string;
+  text: string;
+  votes: number;
+  percentage: number;
 }
 
 export interface CreatePollData {
