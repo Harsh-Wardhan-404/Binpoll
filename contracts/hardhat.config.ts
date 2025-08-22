@@ -1,40 +1,26 @@
-import type { HardhatUserConfig } from "hardhat/config";
-
-import hardhatToolboxViemPlugin from "@nomicfoundation/hardhat-toolbox-viem";
-import { configVariable } from "hardhat/config";
+import { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-toolbox";
+import "dotenv/config";
 
 const config: HardhatUserConfig = {
-  plugins: [hardhatToolboxViemPlugin],
   solidity: {
-    profiles: {
-      default: {
-        version: "0.8.28",
-      },
-      production: {
-        version: "0.8.28",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
+    version: "0.8.28",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
       },
     },
   },
   networks: {
-    hardhatMainnet: {
-      type: "edr-simulated",
-      chainType: "l1",
+    hardhat: {
+      chainId: 1337,
     },
-    hardhatOp: {
-      type: "edr-simulated",
-      chainType: "op",
-    },
-    sepolia: {
-      type: "http",
-      chainType: "l1",
-      url: configVariable("SEPOLIA_RPC_URL"),
-      accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+    bscTestnet: {
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      chainId: 97,
+      accounts: process.env.BSC_TESTNET_PRIVATE_KEY ? [process.env.BSC_TESTNET_PRIVATE_KEY] : [],
+      gasPrice: 10000000000, // 10 gwei
     },
   },
 };
