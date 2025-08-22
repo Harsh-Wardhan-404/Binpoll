@@ -89,6 +89,37 @@ class ApiClient {
     }>('/auth/me');
   }
 
+  async getUserProfile() {
+    return this.request<{
+      success: boolean;
+      data: {
+        id: string;
+        walletAddress: string;
+        username: string;
+        avatarUrl: string;
+        totalPollsCreated: number;
+        totalVotesCast: number;
+        balance: {
+          bnb: string;
+          usd: string;
+        };
+        stats: {
+          pollsCreated: number;
+          votesCast: number;
+          totalEarnings: string;
+          rank: string;
+        };
+        recentActivity: Array<{
+          id: string;
+          type: 'poll_created' | 'vote_cast' | 'poll_ended';
+          title: string;
+          timestamp: string;
+          amount?: string;
+        }>;
+      };
+    }>('/users/profile');
+  }
+
   async updateProfile(username: string) {
     return this.request<{
       success: boolean;
