@@ -239,7 +239,7 @@ const Dashboard: React.FC = () => {
         setVotedOption(optionIndex.toString());
         
         // Call the blockchain voting function
-        await blockchainVote(blockchainIdNum, optionIndex);
+        blockchainVote(blockchainIdNum, optionIndex);
         
         alert(`Please confirm the transaction in your wallet to submit your vote with ${entryFee} BNB!`);
         // await voteOnPoll(poll.id, optionIndex);
