@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSmoothScroll } from './hooks/useSmoothScroll';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
@@ -8,8 +8,11 @@ import { HowItWorks } from './components/HowItWorks';
 import { Stats } from './components/Stats';
 import { CTA } from './components/CTA';
 import { Footer } from './components/Footer';
+import Dashboard from './components/Dashboard';
 
 function App() {
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
+  
   // Initialize smooth scroll
   useSmoothScroll();
 
@@ -114,18 +117,22 @@ function App() {
         }
       `}</style>
 
-      <Navigation />
+      <Navigation onNavigate={setCurrentPage} currentPage={currentPage} />
       
-      <main>
-        <Hero />
-        <InteractiveSection />
-        <Features />
-        <HowItWorks />
-        <Stats />
-        <CTA />
-      </main>
+      {currentPage === 'home' ? (
+        <main>
+          <Hero />
+          <InteractiveSection />
+          <Features />
+          <HowItWorks />
+          <Stats />
+          <CTA />
+        </main>
+      ) : (
+        <Dashboard />
+      )}
       
-      <Footer />
+      {currentPage === 'home' && <Footer />}
     </div>
   );
 }

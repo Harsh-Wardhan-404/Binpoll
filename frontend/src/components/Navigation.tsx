@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiMenu, HiX } from 'react-icons/hi';
 import { FaWallet } from 'react-icons/fa';
-import { FiTrendingUp } from 'react-icons/fi';
+import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
 import { gsap } from 'gsap';
 
-export const Navigation = () => {
+interface NavigationProps {
+  onNavigate?: (page: 'home' | 'dashboard') => void;
+  currentPage?: 'home' | 'dashboard';
+}
+
+export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -18,11 +23,16 @@ export const Navigation = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const navItems = [
+  const navItems = currentPage === 'home' ? [
     { label: 'Markets', href: '#markets' },
     { label: 'How it Works', href: '#how-it-works' },
     { label: 'Features', href: '#features' },
     { label: 'Community', href: '#community' },
+  ] : [
+    { label: 'All Polls', href: '#all-polls' },
+    { label: 'My Polls', href: '#my-polls' },
+    { label: 'Trending', href: '#trending' },
+    { label: 'Categories', href: '#categories' },
   ];
 
   const connectWallet = () => {
@@ -70,6 +80,8 @@ export const Navigation = () => {
             className="flex items-center space-x-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate?.('home')}
+            style={{ cursor: 'pointer' }}
           >
             <div className="w-10 h-10 bg-golden-gradient rounded-lg flex items-center justify-center">
               <FiTrendingUp className="w-6 h-6 text-secondary-900" />
@@ -96,8 +108,39 @@ export const Navigation = () => {
             ))}
           </div>
 
-          {/* Wallet Connection Button */}
-          <div className="hidden md:block">
+          {/* Navigation Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Page Navigation */}
+            <div className="flex items-center space-x-2 bg-white/5 rounded-full p-1 border border-white/10">
+              <motion.button
+                onClick={() => onNavigate?.('home')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
+                  currentPage === 'home'
+                    ? 'bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/25'
+                    : 'text-secondary-300 hover:text-primary-400'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FiHome className="w-4 h-4" />
+                <span>Home</span>
+              </motion.button>
+              <motion.button
+                onClick={() => onNavigate?.('dashboard')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center space-x-2 ${
+                  currentPage === 'dashboard'
+                    ? 'bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/25'
+                    : 'text-secondary-300 hover:text-primary-400'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <FiBarChart2 className="w-4 h-4" />
+                <span>Dashboard</span>
+              </motion.button>
+            </div>
+
+            {/* Wallet Connection Button */}
             <motion.button
               onClick={connectWallet}
               className="btn-primary flex items-center space-x-2"
@@ -146,6 +189,44 @@ export const Navigation = () => {
                     {item.label}
                   </motion.a>
                 ))}
+                {/* Mobile Navigation Buttons */}
+                <div className="flex space-x-2 px-4 mb-4">
+                  <motion.button
+                    onClick={() => {
+                      onNavigate?.('home');
+                      setIsOpen(false);
+                    }}
+                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      currentPage === 'home'
+                        ? 'bg-primary-500 text-secondary-900'
+                        : 'bg-white/5 text-secondary-300 border border-white/10'
+                    }`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <FiHome className="w-4 h-4" />
+                    <span>Home</span>
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      onNavigate?.('dashboard');
+                      setIsOpen(false);
+                    }}
+                    className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center space-x-2 ${
+                      currentPage === 'dashboard'
+                        ? 'bg-primary-500 text-secondary-900'
+                        : 'bg-white/5 text-secondary-300 border border-white/10'
+                    }`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <FiBarChart2 className="w-4 h-4" />
+                    <span>Dashboard</span>
+                  </motion.button>
+                </div>
+
                 <motion.button
                   onClick={() => {
                     connectWallet();
