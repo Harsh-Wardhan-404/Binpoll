@@ -65,17 +65,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
     }
   };
 
-  // Auto-authenticate when wallet connects (if not already authenticated)
-  useEffect(() => {
-    if (isConnected && !isAuthenticated && !isLoading && !isAuthenticating) {
-      // Auto-authenticate after a short delay to ensure wallet is fully connected
-      const timer = setTimeout(() => {
-        handleAuthenticate();
-      }, 1000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected, isAuthenticated, isLoading, isAuthenticating]);
+  // Removed auto-authentication - user must manually click to authenticate
 
   // Show authenticated state
   if (isConnected && isAuthenticated && user) {

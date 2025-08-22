@@ -9,10 +9,10 @@ import { Stats } from './components/Stats';
 import { CTA } from './components/CTA';
 import { Footer } from './components/Footer';
 import Dashboard from './components/Dashboard';
-import AuthTest from './components/AuthTest';
+import Profile from './components/Profile';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'profile'>('home');
   
   // Initialize smooth scroll
   useSmoothScroll();
@@ -119,7 +119,6 @@ function App() {
       `}</style>
 
       <Navigation onNavigate={setCurrentPage} currentPage={currentPage} />
-      <AuthTest />
       
       {currentPage === 'home' ? (
         <main>
@@ -130,8 +129,10 @@ function App() {
           <Stats />
           <CTA />
         </main>
-      ) : (
+      ) : currentPage === 'dashboard' ? (
         <Dashboard />
+      ) : (
+        <Profile />
       )}
       
       {currentPage === 'home' && <Footer />}
