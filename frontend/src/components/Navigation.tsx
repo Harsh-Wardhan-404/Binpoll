@@ -4,6 +4,7 @@ import { HiMenu, HiX } from 'react-icons/hi';
 import { FaWallet } from 'react-icons/fa';
 import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
 import { gsap } from 'gsap';
+import WalletConnectAuth from './WalletConnectAuth';
 
 interface NavigationProps {
   onNavigate?: (page: 'home' | 'dashboard') => void;
@@ -35,10 +36,7 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
     { label: 'Categories', href: '#categories' },
   ];
 
-  const connectWallet = () => {
-    // Placeholder for wallet connection
-    console.log('Connect wallet clicked');
-  };
+
 
   const navVariants = {
     hidden: { y: -100, opacity: 0 },
@@ -140,19 +138,14 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
               </motion.button>
             </div>
 
-            {/* Wallet Connection Button */}
-            <motion.button
-              onClick={connectWallet}
-              className="btn-primary flex items-center space-x-2"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            {/* Wallet Connection */}
+            <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
             >
-              <FaWallet className="w-5 h-5" />
-              <span>Connect Wallet</span>
-            </motion.button>
+              <WalletConnectAuth />
+            </motion.div>
           </div>
 
           {/* Mobile Menu Button */}
@@ -227,19 +220,15 @@ export const Navigation = ({ onNavigate, currentPage = 'home' }: NavigationProps
                   </motion.button>
                 </div>
 
-                <motion.button
-                  onClick={() => {
-                    connectWallet();
-                    setIsOpen(false);
-                  }}
-                  className="w-full mx-4 btn-primary flex items-center justify-center space-x-2"
+                <motion.div
+                  className="w-full mx-4"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
+                  onClick={() => setIsOpen(false)}
                 >
-                  <FaWallet className="w-5 h-5" />
-                  <span>Connect Wallet</span>
-                </motion.button>
+                  <WalletConnectAuth className="w-full justify-center" />
+                </motion.div>
               </div>
             </motion.div>
           )}

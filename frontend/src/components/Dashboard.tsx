@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { gsap } from 'gsap';
+import { useAccount, useChainId } from 'wagmi';
+import { bscTestnet, hardhat } from 'wagmi/chains';
 import ProfileCard from './ProfileCard';
 import PollCard from './PollCard';
 import SearchBar from './SearchBar';
 import ScrollVelocity from './ScrollVelocity';
+import CreatePollModal from './CreatePollModal';
+import WalletConnectAuth from './WalletConnectAuth';
+import { getLocalPolls, voteOnLocalPoll, type LocalStoragePoll } from '../utils/localStorage';
 
 // Dummy data for polls
 const dummyPolls = [
@@ -24,7 +29,7 @@ const dummyPolls = [
     category: 'Technology',
     creator: {
       name: 'Alex Chen',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#f0b90b"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="#1a1a1b" text-anchor="middle" font-weight="bold">AC</text></svg>')}`
     }
   },
   {
@@ -43,7 +48,7 @@ const dummyPolls = [
     category: 'Entertainment',
     creator: {
       name: 'Sarah Johnson',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#10b981"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">SJ</text></svg>')}`
     }
   },
   {
@@ -62,7 +67,7 @@ const dummyPolls = [
     category: 'Politics',
     creator: {
       name: 'Michael Rodriguez',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#8b5cf6"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">MR</text></svg>')}`
     }
   },
   {
@@ -81,7 +86,7 @@ const dummyPolls = [
     category: 'Sports',
     creator: {
       name: 'David Wilson',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#ef4444"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">DW</text></svg>')}`
     }
   },
   {
@@ -100,7 +105,7 @@ const dummyPolls = [
     category: 'Technology',
     creator: {
       name: 'Emma Thompson',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#f59e0b"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">ET</text></svg>')}`
     }
   },
   {
@@ -118,28 +123,52 @@ const dummyPolls = [
     category: 'Lifestyle',
     creator: {
       name: 'Lisa Park',
-      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face'
+      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#06b6d4"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">LP</text></svg>')}`
     }
   }
 ];
 
 const Dashboard: React.FC = () => {
-  const [polls, setPolls] = useState(dummyPolls);
-  const [filteredPolls, setFilteredPolls] = useState(dummyPolls);
+  const [polls, setPolls] = useState<LocalStoragePoll[]>([]);
+  const [filteredPolls, setFilteredPolls] = useState<LocalStoragePoll[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
+
+  // Wagmi hooks
+  const { isConnected, address } = useAccount();
+  const chainId = useChainId();
+  const isCorrectNetwork = chainId === bscTestnet.id || chainId === hardhat.id;
 
   const categories = ['All', 'Technology', 'Politics', 'Sports', 'Entertainment', 'Science', 'Lifestyle'];
 
+  // Load polls from localStorage and combine with dummy data
   useEffect(() => {
-    // Simulate API call
-    const timer = setTimeout(() => {
+    const loadPolls = () => {
+      const localPolls = getLocalPolls();
+      const combinedPolls = [...localPolls, ...dummyPolls];
+      setPolls(combinedPolls);
+      setFilteredPolls(combinedPolls);
       setIsLoading(false);
-    }, 1500);
+    };
 
+    // Simulate API call delay
+    const timer = setTimeout(loadPolls, 1500);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Listen for custom events when new polls are created
+  useEffect(() => {
+    const handleNewPoll = () => {
+      const localPolls = getLocalPolls();
+      const combinedPolls = [...localPolls, ...dummyPolls];
+      setPolls(combinedPolls);
+    };
+
+    window.addEventListener('pollCreated', handleNewPoll);
+    return () => window.removeEventListener('pollCreated', handleNewPoll);
   }, []);
 
   useEffect(() => {
@@ -181,31 +210,46 @@ const Dashboard: React.FC = () => {
   }, [polls, searchQuery, selectedCategory]);
 
   const handleVote = (pollId: string, optionId: string) => {
-    setPolls(prevPolls => 
-      prevPolls.map(poll => {
-        if (poll.id === pollId) {
-          const updatedOptions = poll.options.map(option => {
-            if (option.id === optionId) {
-              return { ...option, votes: option.votes + 1 };
-            }
-            return option;
-          });
+    if (!address) return;
 
-          const totalVotes = updatedOptions.reduce((sum, option) => sum + option.votes, 0);
-          const updatedOptionsWithPercentage = updatedOptions.map(option => ({
-            ...option,
-            percentage: (option.votes / totalVotes) * 100
-          }));
+    // Update local storage for local polls
+    const localPolls = getLocalPolls();
+    const isLocalPoll = localPolls.some(poll => poll.id === pollId);
+    
+    if (isLocalPoll) {
+      voteOnLocalPoll(pollId, optionId, address);
+      // Refresh polls from localStorage
+      const updatedLocalPolls = getLocalPolls();
+      const combinedPolls = [...updatedLocalPolls, ...dummyPolls];
+      setPolls(combinedPolls);
+    } else {
+      // Handle dummy poll voting (in-memory only)
+      setPolls(prevPolls => 
+        prevPolls.map(poll => {
+          if (poll.id === pollId) {
+            const updatedOptions = poll.options.map(option => {
+              if (option.id === optionId) {
+                return { ...option, votes: option.votes + 1 };
+              }
+              return option;
+            });
 
-          return {
-            ...poll,
-            options: updatedOptionsWithPercentage,
-            totalVotes
-          };
-        }
-        return poll;
-      })
-    );
+            const totalVotes = updatedOptions.reduce((sum, option) => sum + option.votes, 0);
+            const updatedOptionsWithPercentage = updatedOptions.map(option => ({
+              ...option,
+              percentage: (option.votes / totalVotes) * 100
+            }));
+
+            return {
+              ...poll,
+              options: updatedOptionsWithPercentage,
+              totalVotes
+            };
+          }
+          return poll;
+        })
+      );
+    }
   };
 
   const handleSearch = (query: string) => {
@@ -275,7 +319,9 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <motion.button
-                  className="ml-4 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-full transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/25 hover:scale-105 active:scale-95 flex items-center space-x-2"
+                  onClick={() => setShowCreateModal(true)}
+                  disabled={!isConnected || !isCorrectNetwork}
+                  className="ml-4 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-full transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/25 hover:scale-105 active:scale-95 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
@@ -302,7 +348,7 @@ const Dashboard: React.FC = () => {
                     handle="alexj"
                     status="Online"
                     contactText="View Profile"
-                    avatarUrl="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face"
+                    avatarUrl={`data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"><rect width="400" height="600" fill="#f0b90b"/><text x="200" y="320" font-family="Arial, sans-serif" font-size="120" fill="#1a1a1b" text-anchor="middle" font-weight="bold">AJ</text></svg>')}`}
                     showUserInfo={true}
                     enableTilt={true}
                     enableMobileTilt={false}
@@ -369,7 +415,63 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </section>
+
+        {/* Wallet Connection Prompt */}
+        {!isConnected && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-8 right-8 z-40"
+          >
+            <div className="bg-secondary-800 border border-primary-500/30 rounded-2xl p-6 max-w-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h4 className="text-white font-semibold mb-2">Connect Your Wallet</h4>
+                <p className="text-secondary-300 text-sm mb-4">
+                  Connect your wallet to create polls and participate in prediction markets
+                </p>
+                <WalletConnectAuth className="w-full justify-center" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Network Warning */}
+        {isConnected && !isCorrectNetwork && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-8 right-8 z-40"
+          >
+            <div className="bg-red-900/90 border border-red-500/50 rounded-2xl p-6 max-w-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <h4 className="text-white font-semibold mb-2">Wrong Network</h4>
+                <p className="text-red-200 text-sm mb-4">
+                  Please switch to BSC Testnet or Hardhat Local to use BinPoll
+                </p>
+                <div className="text-xs text-red-300">
+                  Current: {chainId === 1 ? 'Ethereum Mainnet' : `Chain ${chainId}`}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </div>
+
+      {/* Create Poll Modal */}
+      <CreatePollModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
     </div>
   );
 };
