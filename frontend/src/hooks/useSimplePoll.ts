@@ -51,7 +51,7 @@ const SIMPLE_POLL_ABI = [
       {"internalType": "string", "name": "_title", "type": "string"},
       {"internalType": "string", "name": "_description", "type": "string"},
       {"internalType": "string[]", "name": "_options", "type": "string[]"},
-      {"internalType": "uint256", "name": "_durationInHours", "type": "uint256"}
+      {"internalType": "uint256", "name": "_durationInSeconds", "type": "uint256"}
     ],
     "name": "createPoll",
     "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
@@ -217,7 +217,7 @@ const SIMPLE_POLL_ABI = [
 // Contract addresses (you'll need to deploy and update these)
 const CONTRACT_ADDRESSES = {
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, // Default Hardhat address
-  bscTestnet: '0xa5119569CD9393f2C10737E25a677fB6dbeE56f5' as Address, // Updated with automatic settlement support
+  bscTestnet: '0x91C6e0a716AF94Ee4728c3A0816d1da9bC723203' as Address, // Updated with automatic settlement support
 };
 
 export interface Poll {
@@ -322,7 +322,7 @@ export const useSimplePoll = (chainId?: number) => {
         address: contractAddress,
         abi: SIMPLE_POLL_ABI,
         functionName: 'createPoll',
-        args: [title, description, options, BigInt(durationInSeconds)],
+        args: [title, description, options, durationInSeconds],
         value: depositAmount,
       });
       console.log('✅ createPoll function called successfully');
@@ -353,11 +353,7 @@ export const useSimplePoll = (chainId?: number) => {
       value: entryFee,
     });
 
-    console.log('🔄 Vote on poll:', {
-      pollId,
-      optionId,
-      entryFee,
-    });
+
   };
 
   const settlePollById = (pollId: number, winningOptionId: number) => {
