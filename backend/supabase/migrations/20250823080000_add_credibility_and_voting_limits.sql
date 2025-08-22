@@ -24,18 +24,6 @@ ADD COLUMN IF NOT EXISTS vote_weight DECIMAL(8,4) DEFAULT 1.0000,
 ADD COLUMN IF NOT EXISTS credibility_earned DECIMAL(5,2) DEFAULT 0.00,
 ADD COLUMN IF NOT EXISTS is_correct_prediction BOOLEAN DEFAULT NULL;
 
--- Create credibility history table for tracking changes
-CREATE TABLE IF NOT EXISTS credibility_history (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  poll_id UUID REFERENCES polls(id) ON DELETE SET NULL,
-  old_score DECIMAL(5,2) NOT NULL,
-  new_score DECIMAL(5,2) NOT NULL,
-  change_amount DECIMAL(5,2) NOT NULL,
-  reason VARCHAR(100) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
 -- Create poll results table for tracking outcomes
 CREATE TABLE IF NOT EXISTS poll_results (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -54,8 +42,6 @@ CREATE INDEX IF NOT EXISTS idx_users_reputation_level ON users(reputation_level)
 CREATE INDEX IF NOT EXISTS idx_polls_min_credibility ON polls(min_credibility_required);
 CREATE INDEX IF NOT EXISTS idx_polls_max_voters ON polls(max_voters);
 CREATE INDEX IF NOT EXISTS idx_votes_voter_credibility ON votes(voter_credibility_at_time);
-CREATE INDEX IF NOT EXISTS idx_credibility_history_user_id ON credibility_history(user_id);
-CREATE INDEX IF NOT EXISTS idx_credibility_history_poll_id ON credibility_history(poll_id);
 CREATE INDEX IF NOT EXISTS idx_poll_results_poll_id ON poll_results(poll_id);
 
 -- Function to calculate reputation level based on credibility score
@@ -107,27 +93,6 @@ BEGIN
     total_predictions = total_predictions + 1,
     last_activity = NOW()
   WHERE id = NEW.voter_id;
-  
-  -- Record credibility change in history
-  INSERT INTO credibility_history (
-    user_id, 
-    poll_id, 
-    old_score, 
-    new_score, 
-    change_amount, 
-    reason
-  ) VALUES (
-    NEW.voter_id,
-    NEW.poll_id,
-    user_record.credibility_score,
-    new_credibility,
-    credibility_change,
-    CASE 
-      WHEN NEW.is_correct_prediction = TRUE THEN 'Correct prediction'
-      WHEN NEW.is_correct_prediction = FALSE THEN 'Incorrect prediction'
-      ELSE 'Vote cast'
-    END
-  );
   
   RETURN NEW;
 END;
@@ -244,12 +209,7 @@ SET
 WHERE credibility_score IS NULL;
 
 -- Add RLS policies for new tables
-ALTER TABLE credibility_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE poll_results ENABLE ROW LEVEL SECURITY;
-
--- RLS policies for credibility_history
-CREATE POLICY "Users can view own credibility history" ON credibility_history
-  FOR SELECT USING (auth.uid()::text = user_id::text);
 
 -- RLS policies for poll_results
 CREATE POLICY "Anyone can view poll results" ON poll_results

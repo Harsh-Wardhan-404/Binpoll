@@ -161,33 +161,7 @@ router.get('/address/:address', asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    Get user credibility history
-// @route   GET /api/users/:id/credibility-history
-// @access  Public
-router.get('/:id/credibility-history', asyncHandler(async (req, res) => {
-  const { data, error } = await supabase
-    .from('credibility_history')
-    .select(`
-      *,
-      polls(title)
-    `)
-    .eq('user_id', req.params.id)
-    .order('created_at', { ascending: false })
-    .limit(50);
 
-  if (error) {
-    return res.status(400).json({
-      success: false,
-      error: error.message
-    });
-  }
-
-  res.status(200).json({
-    success: true,
-    count: data.length,
-    data
-  });
-}));
 
 // @desc    Get users by credibility score range
 // @route   GET /api/users/credibility/:min/:max

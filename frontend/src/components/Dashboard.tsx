@@ -265,13 +265,6 @@ const Dashboard: React.FC = () => {
         <section className="pt-20 pb-16">
           <div className="container-custom">
             <div className="text-center mb-12">
-              <ScrollVelocity
-                texts={['Poll Dashboard', 'Vote & Decide']}
-                velocity={50}
-                className="text-gradient text-3xl"
-                parallaxClassName="mb-6"
-                scrollerClassName="text-gradient text-3xl"
-              />
               <p className="text-lg text-secondary-300 max-w-2xl mx-auto leading-relaxed">
                 Discover and participate in polls from around the world. Your voice matters in shaping opinions and decisions.
               </p>

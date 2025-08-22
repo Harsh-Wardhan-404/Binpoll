@@ -67,13 +67,11 @@ is_correct_prediction BOOLEAN DEFAULT NULL
 ```
 
 ### New Tables
-- **credibility_history**: Tracks all credibility changes with reasons
 - **poll_results**: Stores final poll outcomes and statistics
 
 ## API Endpoints
 
 ### User Routes
-- `GET /api/users/:id/credibility-history` - Get user's credibility change history
 - `GET /api/users/credibility/:min/:max` - Get users by credibility range
 
 ### Poll Routes
@@ -91,7 +89,7 @@ is_correct_prediction BOOLEAN DEFAULT NULL
 Automatically determines reputation level based on credibility score.
 
 ### 2. `update_user_credibility_after_poll()`
-Trigger function that updates user credibility when poll results are determined.
+Trigger function that updates user credibility when poll results are determined (without history tracking).
 
 ### 3. `validate_voting_eligibility(poll_id, voter_id, voter_credibility)`
 Checks if a user can vote on a specific poll based on:
@@ -117,7 +115,6 @@ Trigger function that sets vote metadata when a vote is created.
 ### 2. `trigger_update_credibility_after_poll`
 - Fires when poll results are determined
 - Updates user credibility based on prediction accuracy
-- Records changes in credibility history
 - Updates reputation levels
 
 ## Usage Examples
