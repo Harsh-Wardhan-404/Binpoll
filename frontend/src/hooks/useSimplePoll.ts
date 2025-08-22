@@ -2,7 +2,7 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { parseEther, formatEther, type Address } from 'viem';
 import { readContract } from '@wagmi/core';
 import { config as wagmiConfig } from '../wagmi';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useCallback } from 'react';
 
 // SimplePoll contract ABI
 const SIMPLE_POLL_ABI = [
@@ -89,6 +89,7 @@ const SIMPLE_POLL_ABI = [
           {"internalType": "uint256", "name": "requiredCredibility", "type": "uint256"},
           {"internalType": "uint256", "name": "pollPrice", "type": "uint256"},
           {"internalType": "uint256", "name": "maxVotes", "type": "uint256"},
+          {"internalType": "uint256", "name": "entryFee", "type": "uint256"},
           {"internalType": "uint256", "name": "currentVotes", "type": "uint256"},
           {"internalType": "uint256", "name": "voterBetAmount", "type": "uint256"},
           {"internalType": "bool", "name": "creatorRefillClaimed", "type": "bool"}
@@ -234,7 +235,7 @@ const SIMPLE_POLL_ABI = [
 // Contract addresses (you'll need to deploy and update these)
 const CONTRACT_ADDRESSES = {
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, // Default Hardhat address
-  bscTestnet: '0xFEeedF040dd2eb564AD31246b6CA877353582aE9' as Address, // Updated with dynamic pricing system
+  bscTestnet: '0xC05904956996c4ec4cddD20B4719f93da636E717' as Address, // Updated with dynamic pricing system
 };
 
 export interface Poll {
@@ -248,12 +249,13 @@ export interface Poll {
   winningOption: bigint;
   totalPool: bigint;
   creatorDeposit: bigint;
-  voterPool: bigint;
-  requiredCredibility: bigint;
+  voterPool: number;
+  requiredCredibility: number;
   pollPrice: bigint;
   maxVotes: bigint;
   currentVotes: bigint;
   voterBetAmount: bigint;
+  entryFee: bigint;
 }
 
 export interface PollRewardBreakdown {
@@ -298,7 +300,7 @@ export const useSimplePoll = (chainId?: number) => {
   });
 
   // For dynamic data, use a different approach
-  const [pollData, setPollData] = useState<any>(null);
+  // Removed unused state variables
 
   // Write functions
   const { writeContract: createPoll, data: createPollTxHash, isPending: isCreatingPoll, error: createPollError } = useWriteContract();
@@ -405,26 +407,29 @@ export const useSimplePoll = (chainId?: number) => {
   };
 
   const voteOnPoll = async (pollId: number, optionId: number) => {
-    if (!entryFee) return;
-    
-    // Check if poll is still active before voting
-    const now = Math.floor(Date.now() / 1000); // Current timestamp in seconds
-    const poll = useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'getPoll',
-      args: [BigInt(pollId)],
-    });
-
-    // Poll end time check removed - will be handled by smart contract
-
-    vote({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'vote',
-      args: [BigInt(pollId), BigInt(optionId)],
-      value: entryFee,
-    });
+    try {
+      // Get the dynamic vote price for this specific poll
+      const dynamicVotePrice = await getDynamicVotePrice(pollId);
+      if (!dynamicVotePrice) {
+        throw new Error('Failed to get dynamic vote price');
+      }
+      
+      console.log(`🎯 Voting on poll ${pollId}, option ${optionId} with dynamic price: ${dynamicVotePrice} BNB`);
+      
+      // Convert the dynamic price to wei
+      const voteAmount = parseEther(dynamicVotePrice);
+      
+      vote({
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'vote',
+        args: [BigInt(pollId), BigInt(optionId)],
+        value: voteAmount,
+      });
+    } catch (error) {
+      console.error('❌ Error in voteOnPoll:', error);
+      throw error;
+    }
   };
 
   const settlePollById = (pollId: number, winningOptionId: number) => {
@@ -461,40 +466,60 @@ export const useSimplePoll = (chainId?: number) => {
     }
   };
 
-  const getVoterCount = (pollId: number, optionId: number) => {
-    return useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'getVoterCount',
-      args: [BigInt(pollId), BigInt(optionId)],
-    });
+  const getVoterCount = async (pollId: number, optionId: number) => {
+    try {
+      return await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'getVoterCount',
+        args: [BigInt(pollId), BigInt(optionId)],
+      });
+    } catch (error) {
+      console.error('Error fetching voter count:', error);
+      return null;
+    }
   };
 
-  const getTotalVoters = (pollId: number) => {
-    return useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'getTotalVoters',
-      args: [BigInt(pollId)],
-    });
+  const getTotalVoters = async (pollId: number) => {
+    try {
+      return await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'getTotalVoters',
+        args: [BigInt(pollId)],
+      });
+    } catch (error) {
+      console.error('Error fetching total voters:', error);
+      return null;
+    }
   };
 
-  const hasUserVoted = (pollId: number, userAddress: Address) => {
-    return useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'hasVoted',
-      args: [BigInt(pollId), userAddress],
-    });
+  const hasUserVoted = async (pollId: number, userAddress: Address) => {
+    try {
+      return await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'hasVoted',
+        args: [BigInt(pollId), userAddress],
+      });
+    } catch (error) {
+      console.error('Error checking if user voted:', error);
+      return false;
+    }
   };
 
-  const getPollRewardBreakdown = (pollId: number) => {
-    return useReadContract({
-      address: contractAddress,
-      abi: SIMPLE_POLL_ABI,
-      functionName: 'getPollRewardBreakdown',
-      args: [BigInt(pollId)],
-    });
+  const getPollRewardBreakdown = async (pollId: number) => {
+    try {
+      return await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'getPollRewardBreakdown',
+        args: [BigInt(pollId)],
+      });
+    } catch (error) {
+      console.error('Error fetching poll reward breakdown:', error);
+      return null;
+    }
   };
 
   // Function to get all polls from the blockchain
@@ -543,6 +568,45 @@ export const useSimplePoll = (chainId?: number) => {
     return polls;
   };
 
+  // Function to get dynamic vote price for a specific poll
+  const getDynamicVotePrice = useCallback(async (pollId: number) => {
+    try {
+      console.log(`💰 Fetching dynamic vote price for poll ${pollId}...`);
+      const pollData = await readContract(wagmiConfig, {
+        address: contractAddress,
+        abi: SIMPLE_POLL_ABI,
+        functionName: 'getPoll',
+        args: [BigInt(pollId)],
+      });
+      
+      if (pollData) {
+        // Calculate dynamic price using the same formula as the contract
+        const basePrice = pollData.pollPrice;
+        const currentVotes = pollData.currentVotes;
+        const maxVotes = pollData.maxVotes;
+        
+        // Use the same calculation as the contract's calculateVotePrice function
+        const multiplier = 1n + (currentVotes * 4n) / maxVotes;
+        const dynamicPrice = basePrice * multiplier;
+        
+        const dynamicPriceFormatted = formatEther(dynamicPrice);
+        console.log(`✅ Dynamic vote price for poll ${pollId}:`, dynamicPriceFormatted, 'BNB');
+        console.log(`📊 Base price: ${formatEther(basePrice)}, Current votes: ${currentVotes}, Max votes: ${maxVotes}, Multiplier: ${multiplier}`);
+        return dynamicPriceFormatted;
+      }
+      console.log(`⚠️ No poll data found for poll ${pollId}, using default`);
+      return entryFee ? formatEther(entryFee) : '0';
+    } catch (error) {
+      console.error(`❌ Error fetching dynamic vote price for poll ${pollId}:`, error);
+      return entryFee ? formatEther(entryFee) : '0';
+    }
+  }, [contractAddress, entryFee]);
+
+  // Function to get entry fee for a specific poll (legacy - now uses dynamic pricing)
+  const getPollEntryFee = useCallback(async (pollId: number) => {
+    return getDynamicVotePrice(pollId);
+  }, [getDynamicVotePrice]);
+
   // Debug logging for transaction states (only when they change)
   useEffect(() => {
     if (isCreatingPoll || isCreatingPollConfirming || createPollTxHash || createPollError) {
@@ -578,6 +642,8 @@ export const useSimplePoll = (chainId?: number) => {
     getTotalVoters,
     hasUserVoted,
     getPollRewardBreakdown,
+    getPollEntryFee,
+    getDynamicVotePrice,
 
     // Transaction states
     isCreatingPoll: isCreatingPoll || isCreatingPollConfirming,
@@ -600,39 +666,40 @@ export const useSimplePoll = (chainId?: number) => {
 };
 
 // Helper function to format poll data from contract
-export const formatPollData = (pollData: any): Poll | null => {
+export const formatPollData = (pollData: Record<string, unknown>): Poll | null => {
   if (!pollData) return null;
 
   return {
-    id: pollData.id,
-    title: pollData.title,
-    description: pollData.description,
-    creator: pollData.creator,
-    options: pollData.options,
-    endTime: pollData.endTime,
-    settled: pollData.settled,
-    winningOption: pollData.winningOption,
-    totalPool: pollData.totalPool,
-    creatorDeposit: pollData.creatorDeposit,
-    voterPool: pollData.voterPool,
-    requiredCredibility: pollData.requiredCredibility,
-    pollPrice: pollData.pollPrice,
-    maxVotes: pollData.maxVotes,
-    currentVotes: pollData.currentVotes,
-    voterBetAmount: pollData.voterBetAmount,
+    id: pollData.id as bigint,
+    title: pollData.title as string,
+    description: pollData.description as string,
+    creator: pollData.creator as Address,
+    options: pollData.options as string[],
+    endTime: pollData.endTime as bigint,
+    settled: pollData.settled as boolean,
+    winningOption: pollData.winningOption as bigint,
+    totalPool: pollData.totalPool as bigint,
+    creatorDeposit: pollData.creatorDeposit as bigint,
+    voterPool: pollData.voterPool as number,
+    requiredCredibility: pollData.requiredCredibility as number,
+    pollPrice: pollData.pollPrice as bigint,
+    maxVotes: pollData.maxVotes as bigint,
+    currentVotes: pollData.currentVotes as bigint,
+    voterBetAmount: pollData.voterBetAmount as bigint,
+    entryFee: pollData.entryFee as bigint,
   };
 };
 
 // Helper function to format reward breakdown data from contract
-export const formatRewardBreakdown = (breakdownData: any): PollRewardBreakdown | null => {
-  if (!breakdownData || breakdownData.length < 6) return null;
+export const formatRewardBreakdown = (breakdownData: unknown): PollRewardBreakdown | null => {
+  if (!breakdownData || !Array.isArray(breakdownData) || breakdownData.length < 6) return null;
 
   return {
-    totalPool: breakdownData[0],
-    creatorDeposit: breakdownData[1],
-    voterPool: breakdownData[2],
-    projectedWinnerPool: breakdownData[3],
-    projectedPlatformFee: breakdownData[4],
-    projectedCreatorFee: breakdownData[5],
+    totalPool: breakdownData[0] as bigint,
+    creatorDeposit: breakdownData[1] as bigint,
+    voterPool: breakdownData[2] as bigint,
+    projectedWinnerPool: breakdownData[3] as bigint,
+    projectedPlatformFee: breakdownData[4] as bigint,
+    projectedCreatorFee: breakdownData[5] as bigint,
   };
 };

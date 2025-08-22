@@ -34,6 +34,7 @@ contract SimplePoll {
         uint256 requiredCredibility; // Credibility needed to vote
         uint256 pollPrice; // Total bet amount for this poll
         uint256 maxVotes; // Maximum votes allowed for this poll
+        uint256 entryFee; // Entry fee per vote (pollPrice/maxVotes)
         uint256 currentVotes; // Current number of votes
         uint256 voterBetAmount; // Bet amount per voter
         bool creatorRefillClaimed; // Whether creator claimed refill
@@ -99,8 +100,7 @@ contract SimplePoll {
         
         uint256 pollId = nextPollId++;
         uint256 endTime = block.timestamp + _durationInSeconds;
-
-      
+        require(_requiredCredibility > 0, "Required credibility must be greater than 0");
         
         polls[pollId] = Poll({
             id: pollId,
@@ -118,6 +118,7 @@ contract SimplePoll {
             requiredCredibility: _requiredCredibility,
             pollPrice: _pollPrice,
             maxVotes: _maxVotes,
+            entryFee: _pollPrice/_maxVotes,
             currentVotes: 0,
             voterBetAmount: 0, // Not used with dynamic pricing
             creatorRefillClaimed: false

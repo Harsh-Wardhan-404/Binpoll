@@ -648,7 +648,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                       </div>
                       
                       {/* Dynamic Pricing Preview */}
-                      <div className="bg-gradient-to-r from-green-500/10 to-red-500/10 border border-white/10 rounded-lg p-3">
+                      {/*<div className="bg-gradient-to-r from-green-500/10 to-red-500/10 border border-white/10 rounded-lg p-3">
                         <div className="text-sm font-medium text-white mb-2">Dynamic Pricing Preview</div>
                         <div className="grid grid-cols-3 gap-2 text-xs">
                           <div className="text-center">
@@ -664,7 +664,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                             <div className="text-secondary-300">{calculateVotePriceAtPosition(calculateBaseVotePrice(maxVotes), maxVotes - 1, maxVotes)} BNB</div>
                           </div>
                         </div>
-                      </div>
+                      </div>*/}
                       
                       {/* Base Vote Price Input */}
                       <div className="flex items-center space-x-3">

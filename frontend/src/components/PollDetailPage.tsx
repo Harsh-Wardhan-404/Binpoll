@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount, useChainId } from 'wagmi';
 import { useSimplePoll } from '../hooks/useSimplePoll';
@@ -15,15 +15,15 @@ const PollDetailPage: React.FC = () => {
 
   // Get blockchain voting info if it's a blockchain poll
   const { 
-    entryFee, 
-    voteOnPoll: blockchainVote
+    voteOnPoll: blockchainVote,
+    getDynamicVotePrice
   } = useSimplePoll(chainId);
 
   const handleBack = () => {
     navigate('/dashboard');
   };
 
-  const handleVote = async (poll: PollDetailType, optionIndex: number) => {
+  const handleVote = useCallback(async (poll: PollDetailType, optionIndex: number) => {
     if (!address) {
       alert('Please connect your wallet to vote');
       return;
@@ -38,7 +38,6 @@ const PollDetailPage: React.FC = () => {
       if (poll?.is_on_chain) {
         // For blockchain polls, we need to call the smart contract
         console.log('🔗 Blockchain poll detected - calling smart contract vote');
-        console.log('💰 Entry fee required:', entryFee, 'BNB');
         
         // Use the blockchain ID from the poll data
         const blockchainId = poll.blockchain_id;
@@ -48,11 +47,15 @@ const PollDetailPage: React.FC = () => {
           throw new Error('Invalid blockchain poll ID');
         }
         
+        // Get the dynamic vote price for this poll
+        const dynamicVotePrice = await getDynamicVotePrice(blockchainIdNum);
+        console.log('💰 Dynamic vote price for poll:', blockchainIdNum, 'is:', dynamicVotePrice, 'BNB');
+        
         // Call the blockchain voting function
         console.log('🎯 Voting on blockchain poll:', blockchainIdNum, 'option:', optionIndex);
         await blockchainVote(blockchainIdNum, optionIndex);
         
-        alert(`Please confirm the transaction in your wallet to submit your vote with ${entryFee} BNB!`);
+        alert(`Please confirm the transaction in your wallet to submit your vote with ${dynamicVotePrice} BNB!`);
       } else {
         // For API polls, use the regular voting flow
         console.log('Voting on API poll:', poll.id, optionIndex);
@@ -65,7 +68,7 @@ const PollDetailPage: React.FC = () => {
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert(`Failed to vote: ${errorMessage}`);
     }
-  };
+  }, [address, isCorrectNetwork, blockchainVote, getDynamicVotePrice]);
 
   if (!pollId) {
     return (

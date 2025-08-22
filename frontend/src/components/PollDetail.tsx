@@ -23,22 +23,48 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
   const [isVoting, setIsVoting] = useState(false);
   const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
   const [pendingVote, setPendingVote] = useState<number | null>(null);
+  const [pollEntryFee, setPollEntryFee] = useState<string>('0');
+  const hasFetchedRef = useRef(false);
 
   // Get blockchain voting info if it's a blockchain poll
   const { 
     entryFee, 
     isVoting: isBlockchainVoting, 
-    voteTxHash
+    voteTxHash,
+    getDynamicVotePrice
   } = useSimplePoll(chainId);
 
   // Fetch poll data
   useEffect(() => {
     const fetchPoll = async () => {
+      // Prevent multiple fetches
+      if (hasFetchedRef.current) return;
+      hasFetchedRef.current = true;
+      
       try {
         setLoading(true);
         const response = await apiClient.getPoll(pollId);
         if (response.success) {
           setPoll(response.data);
+          
+          // If it's a blockchain poll, fetch the dynamic vote price from contract
+          if (response.data.is_on_chain && response.data.blockchain_id) {
+            try {
+              const blockchainId = typeof response.data.blockchain_id === 'string' 
+                ? parseInt(response.data.blockchain_id) 
+                : Number(response.data.blockchain_id);
+              
+              if (!isNaN(blockchainId)) {
+                const dynamicVotePrice = await getDynamicVotePrice(blockchainId);
+                setPollEntryFee(dynamicVotePrice);
+                console.log('Dynamic vote price for poll:', blockchainId, 'is:', dynamicVotePrice, 'BNB');
+              }
+            } catch (error) {
+              console.error('Error fetching dynamic vote price:', error);
+              // Fallback to default entry fee
+              setPollEntryFee(entryFee);
+            }
+          }
         } else {
           setError('Failed to fetch poll data');
         }
@@ -51,7 +77,12 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
     };
 
     fetchPoll();
-  }, [pollId]);
+
+    // Cleanup function to reset fetch flag when pollId changes
+    return () => {
+      hasFetchedRef.current = false;
+    };
+  }, [pollId]); // Only depend on pollId
 
   // Animation effect
   useEffect(() => {
@@ -283,6 +314,14 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                 transition={{ delay: 0.7 }}
               >
                 <h3 className="text-xl font-bold text-white mb-4 text-center">Reward System Details</h3>
+                <div className="text-center mb-4">
+                  <span className="inline-flex items-center px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Dynamic Pricing Active
+                  </span>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                   <div>
                     <div className="text-lg font-semibold text-purple-400">
@@ -320,6 +359,17 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                     </div>
                   </div>
                 )}
+                
+                {/* Dynamic Pricing Explanation */}
+                <div className="mt-4 bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                  <h4 className="text-blue-400 font-medium mb-2">How Dynamic Pricing Works:</h4>
+                  <div className="space-y-1 text-sm text-blue-300">
+                    <div>• First vote: Base price ({pollEntryFee} BNB)</div>
+                    <div>• Last vote: Up to 5x base price</div>
+                    <div>• Price increases as more people vote</div>
+                    <div>• Early voters get better rates!</div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </div>
@@ -462,51 +512,32 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                       }
                     }}
                   >
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="mb-4">
                       <h3 className="text-lg font-semibold text-white">{option.text}</h3>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary-400">{option.votes}</div>
-                        <div className="text-sm text-secondary-300">votes</div>
-                      </div>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="w-full bg-white/10 rounded-full h-3 mb-4">
-                      <motion.div
-                        className="bg-gradient-to-r from-primary-500 to-primary-600 h-3 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${option.percentage}%` }}
-                        transition={{ delay: 1 + index * 0.1, duration: 1 }}
-                      />
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-sm text-secondary-300">
-                          {option.percentage.toFixed(1)}% of total votes
-                        </span>
-                        <div className="flex items-center space-x-2">
-                          {poll.is_on_chain && (
-                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
-                              {entryFee} BNB
-                            </span>
-                          )}
-                          {(selectedOption === index || poll?.userVote === index) && (
-                            <span className="text-primary-400 text-sm font-medium">
-                              ✓ Your vote
-                            </span>
-                          )}
-                          {userHasVoted && poll?.userVote !== index && (
-                            <span className="text-secondary-500 text-sm">
-                              Voting closed
-                            </span>
-                          )}
-                          {(isVoting || isBlockchainVoting) && (
-                            <span className="text-yellow-400 text-sm">
-                              Processing...
-                            </span>
-                          )}
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        {poll.is_on_chain && (
+                          <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                            {pollEntryFee} BNB (Dynamic)
+                          </span>
+                        )}
+                        {(selectedOption === index || poll?.userVote === index) && (
+                          <span className="text-primary-400 text-sm font-medium">
+                            ✓ Your vote
+                          </span>
+                        )}
+                        {userHasVoted && poll?.userVote !== index && (
+                          <span className="text-secondary-500 text-sm">
+                            Voting closed
+                          </span>
+                        )}
+                        {(isVoting || isBlockchainVoting) && (
+                          <span className="text-yellow-400 text-sm">
+                            Processing...
+                          </span>
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -547,7 +578,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                             </svg>
-                            <span>Paying {entryFee} BNB</span>
+                            <span>Paying {pollEntryFee} BNB (Dynamic Price)</span>
                           </div>
                           <p className="text-xs text-blue-300">
                             Please wait while your transaction is processed on the blockchain...
@@ -622,10 +653,10 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
-                    <span className="font-medium">Cost: {entryFee} BNB</span>
+                    <span className="font-medium">Cost: {pollEntryFee} BNB (Dynamic)</span>
                   </div>
                   <p className="text-blue-300 text-sm mt-2">
-                    This will deduct {entryFee} BNB from your wallet
+                    This will deduct {pollEntryFee} BNB from your wallet
                   </p>
                 </div>
               </div>
@@ -648,7 +679,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
                       <span>Processing...</span>
                     </>
                   ) : (
-                    <span>Pay {entryFee} BNB & Vote</span>
+                    <span>Pay {pollEntryFee} BNB & Vote</span>
                   )}
                 </button>
               </div>
