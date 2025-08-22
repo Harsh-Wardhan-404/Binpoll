@@ -9,133 +9,20 @@ import SearchBar from './SearchBar';
 import ScrollVelocity from './ScrollVelocity';
 import CreatePollModal from './CreatePollModal';
 import WalletConnectAuth from './WalletConnectAuth';
-import { getLocalPolls, voteOnLocalPoll, type LocalStoragePoll } from '../utils/localStorage';
+import { usePolls } from '../hooks/usePolls';
+import type { Poll } from '../types';
 
-// Dummy data for polls
-const dummyPolls = [
-  {
-    id: '1',
-    title: 'Best Programming Language 2024',
-    description: 'Which programming language do you think will dominate the industry in 2024?',
-    options: [
-      { id: '1a', text: 'Python', votes: 1250, percentage: 45.2 },
-      { id: '1b', text: 'JavaScript', votes: 980, percentage: 35.4 },
-      { id: '1c', text: 'Rust', votes: 320, percentage: 11.6 },
-      { id: '1d', text: 'Go', votes: 220, percentage: 7.8 }
-    ],
-    totalVotes: 2770,
-    endDate: '2024-12-31T23:59:59Z',
-    isActive: true,
-    category: 'Technology',
-    creator: {
-      name: 'Alex Chen',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#f0b90b"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="#1a1a1b" text-anchor="middle" font-weight="bold">AC</text></svg>')}`
-    }
-  },
-  {
-    id: '2',
-    title: 'Favorite Movie Genre',
-    description: 'What type of movies do you enjoy watching the most?',
-    options: [
-      { id: '2a', text: 'Action/Adventure', votes: 890, percentage: 38.5 },
-      { id: '2b', text: 'Comedy', votes: 650, percentage: 28.1 },
-      { id: '2c', text: 'Drama', votes: 420, percentage: 18.2 },
-      { id: '2d', text: 'Sci-Fi', votes: 350, percentage: 15.2 }
-    ],
-    totalVotes: 2310,
-    endDate: '2024-11-15T23:59:59Z',
-    isActive: true,
-    category: 'Entertainment',
-    creator: {
-      name: 'Sarah Johnson',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#10b981"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">SJ</text></svg>')}`
-    }
-  },
-  {
-    id: '3',
-    title: 'Most Important Global Issue',
-    description: 'Which global issue should be humanity\'s top priority?',
-    options: [
-      { id: '3a', text: 'Climate Change', votes: 2100, percentage: 52.5 },
-      { id: '3b', text: 'Poverty', votes: 680, percentage: 17.0 },
-      { id: '3c', text: 'Healthcare', votes: 520, percentage: 13.0 },
-      { id: '3d', text: 'Education', votes: 700, percentage: 17.5 }
-    ],
-    totalVotes: 4000,
-    endDate: '2024-10-20T23:59:59Z',
-    isActive: false,
-    category: 'Politics',
-    creator: {
-      name: 'Michael Rodriguez',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#8b5cf6"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">MR</text></svg>')}`
-    }
-  },
-  {
-    id: '4',
-    title: 'Best Sports Team',
-    description: 'Which sports team do you think will win the championship this year?',
-    options: [
-      { id: '4a', text: 'Lakers', votes: 750, percentage: 30.0 },
-      { id: '4b', text: 'Warriors', votes: 680, percentage: 27.2 },
-      { id: '4c', text: 'Celtics', votes: 520, percentage: 20.8 },
-      { id: '4d', text: 'Heat', votes: 550, percentage: 22.0 }
-    ],
-    totalVotes: 2500,
-    endDate: '2024-12-15T23:59:59Z',
-    isActive: true,
-    category: 'Sports',
-    creator: {
-      name: 'David Wilson',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#ef4444"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">DW</text></svg>')}`
-    }
-  },
-  {
-    id: '5',
-    title: 'Future of AI',
-    description: 'How do you think AI will impact society in the next decade?',
-    options: [
-      { id: '5a', text: 'Mostly Positive', votes: 1200, percentage: 40.0 },
-      { id: '5b', text: 'Mixed Impact', votes: 900, percentage: 30.0 },
-      { id: '5c', text: 'Mostly Negative', votes: 600, percentage: 20.0 },
-      { id: '5d', text: 'Uncertain', votes: 300, percentage: 10.0 }
-    ],
-    totalVotes: 3000,
-    endDate: '2024-11-30T23:59:59Z',
-    isActive: true,
-    category: 'Technology',
-    creator: {
-      name: 'Emma Thompson',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#f59e0b"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">ET</text></svg>')}`
-    }
-  },
-  {
-    id: '6',
-    title: 'Coffee vs Tea',
-    description: 'Which hot beverage do you prefer for your daily caffeine fix?',
-    options: [
-      { id: '6a', text: 'Coffee', votes: 1800, percentage: 60.0 },
-      { id: '6b', text: 'Tea', votes: 900, percentage: 30.0 },
-      { id: '6c', text: 'Neither', votes: 300, percentage: 10.0 }
-    ],
-    totalVotes: 3000,
-    endDate: '2024-09-15T23:59:59Z',
-    isActive: false,
-    category: 'Lifestyle',
-    creator: {
-      name: 'Lisa Park',
-      avatar: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150"><rect width="150" height="150" fill="#06b6d4"/><text x="75" y="85" font-family="Arial, sans-serif" font-size="60" fill="white" text-anchor="middle" font-weight="bold">LP</text></svg>')}`
-    }
-  }
-];
+
 
 const Dashboard: React.FC = () => {
-  const [polls, setPolls] = useState<LocalStoragePoll[]>([]);
-  const [filteredPolls, setFilteredPolls] = useState<LocalStoragePoll[]>([]);
+  const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
+
+  // API hooks
+  const { polls, loading: isLoading, fetchPolls, createPoll, voteOnPoll } = usePolls();
 
   // Wagmi hooks
   const { isConnected, address } = useAccount();
@@ -144,32 +31,10 @@ const Dashboard: React.FC = () => {
 
   const categories = ['All', 'Technology', 'Politics', 'Sports', 'Entertainment', 'Science', 'Lifestyle'];
 
-  // Load polls from localStorage and combine with dummy data
+  // Load polls from API on component mount
   useEffect(() => {
-    const loadPolls = () => {
-      const localPolls = getLocalPolls();
-      const combinedPolls = [...localPolls, ...dummyPolls];
-      setPolls(combinedPolls);
-      setFilteredPolls(combinedPolls);
-      setIsLoading(false);
-    };
-
-    // Simulate API call delay
-    const timer = setTimeout(loadPolls, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Listen for custom events when new polls are created
-  useEffect(() => {
-    const handleNewPoll = () => {
-      const localPolls = getLocalPolls();
-      const combinedPolls = [...localPolls, ...dummyPolls];
-      setPolls(combinedPolls);
-    };
-
-    window.addEventListener('pollCreated', handleNewPoll);
-    return () => window.removeEventListener('pollCreated', handleNewPoll);
-  }, []);
+    fetchPolls();
+  }, []); // Remove fetchPolls from dependency array since it's now memoized
 
   useEffect(() => {
     if (dashboardRef.current) {
@@ -209,47 +74,41 @@ const Dashboard: React.FC = () => {
     setFilteredPolls(filtered);
   }, [polls, searchQuery, selectedCategory]);
 
-  const handleVote = (pollId: string, optionId: string) => {
+  const handleVote = async (pollId: string, optionIndex: number) => {
     if (!address) return;
 
-    // Update local storage for local polls
-    const localPolls = getLocalPolls();
-    const isLocalPoll = localPolls.some(poll => poll.id === pollId);
-    
-    if (isLocalPoll) {
-      voteOnLocalPoll(pollId, optionId, address);
-      // Refresh polls from localStorage
-      const updatedLocalPolls = getLocalPolls();
-      const combinedPolls = [...updatedLocalPolls, ...dummyPolls];
-      setPolls(combinedPolls);
-    } else {
-      // Handle dummy poll voting (in-memory only)
-      setPolls(prevPolls => 
-        prevPolls.map(poll => {
-          if (poll.id === pollId) {
-            const updatedOptions = poll.options.map(option => {
-              if (option.id === optionId) {
-                return { ...option, votes: option.votes + 1 };
-              }
-              return option;
-            });
-
-            const totalVotes = updatedOptions.reduce((sum, option) => sum + option.votes, 0);
-            const updatedOptionsWithPercentage = updatedOptions.map(option => ({
-              ...option,
-              percentage: (option.votes / totalVotes) * 100
-            }));
-
-            return {
-              ...poll,
-              options: updatedOptionsWithPercentage,
-              totalVotes
-            };
-          }
-          return poll;
-        })
-      );
+    try {
+      await voteOnPoll(pollId, optionIndex);
+      // The polls will be automatically refreshed by the hook
+    } catch (error) {
+      console.error('Failed to vote:', error);
     }
+  };
+
+  // Transform API poll data to match PollCard interface
+  const transformPollForCard = (poll: Poll) => {
+    const totalVotes = poll.totalVotes || 0;
+    const options = poll.options.map((option, index) => ({
+      id: `${poll.id}-${index}`,
+      text: option,
+      votes: poll.optionVotes?.[index] || 0,
+      percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
+    }));
+
+    return {
+      id: poll.id,
+      title: poll.title,
+      description: poll.description,
+      options,
+      totalVotes,
+      endDate: poll.end_time,
+      isActive: poll.is_active && new Date(poll.end_time) > new Date(),
+      category: poll.category,
+      creator: {
+        name: poll.users?.username || 'Unknown',
+        avatar: poll.users?.avatar_url || ''
+      }
+    };
   };
 
   const handleSearch = (query: string) => {
@@ -387,8 +246,12 @@ const Dashboard: React.FC = () => {
                           transition={{ duration: 0.6, delay: index * 0.1 }}
                         >
                           <PollCard
-                            {...poll}
-                            onVote={handleVote}
+                            {...transformPollForCard(poll)}
+                            onVote={(pollId, optionId) => {
+                              // Extract option index from optionId (format: "pollId-index")
+                              const optionIndex = parseInt(optionId.split('-')[1]);
+                              handleVote(pollId, optionIndex);
+                            }}
                           />
                         </motion.div>
                       ))}

@@ -4,7 +4,7 @@ import { HiX, HiPlus, HiMinus } from 'react-icons/hi';
 import { FiClock, FiEdit3, FiUsers } from 'react-icons/fi';
 import { useSimplePoll } from '../hooks/useSimplePoll';
 import { useChainId, useAccount } from 'wagmi';
-import { createLocalPoll, saveLocalPoll } from '../utils/localStorage';
+import { usePolls } from '../hooks/usePolls';
 
 interface CreatePollModalProps {
   isOpen: boolean;
@@ -20,6 +20,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
   const chainId = useChainId();
   const { isConnected, address } = useAccount();
   const { createNewPoll, isCreatingPoll, entryFee, createPollError } = useSimplePoll(chainId);
+  const { createPoll, loading: isCreatingApiPoll } = usePolls();
 
   const addOption = () => {
     if (options.length < 5) {
@@ -39,7 +40,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
     setOptions(newOptions);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!isConnected || !address) {
@@ -58,30 +59,29 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
       return;
     }
 
-    // Create and save poll to localStorage
-    const newPoll = createLocalPoll(
-      title.trim(),
-      description.trim(),
-      validOptions,
-      duration,
-      'You', // Creator name - you can customize this
-      address,
-      'General' // Default category - you can add category selection later
-    );
+    try {
+      // Create poll using API
+      const newPoll = await createPoll({
+        title: title.trim(),
+        description: description.trim(),
+        options: validOptions,
+        durationHours: duration,
+        category: 'General'
+      });
 
-    saveLocalPoll(newPoll);
-
-    // Dispatch custom event to notify Dashboard
-    window.dispatchEvent(new CustomEvent('pollCreated'));
-
-    // Optional: Also create on blockchain (comment out for now)
-    // createNewPoll(title.trim(), description.trim(), validOptions, duration);
-
-    // Close modal and reset form
-    handleClose();
-    
-    // Show success message
-    alert('Poll created successfully! It will appear in the dashboard.');
+      if (newPoll) {
+        // Close modal and reset form
+        handleClose();
+        
+        // Show success message
+        alert('Poll created successfully! It will appear in the dashboard.');
+      } else {
+        alert('Failed to create poll. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating poll:', error);
+      alert('Failed to create poll. Please try again.');
+    }
   };
 
   const resetForm = () => {
@@ -128,7 +128,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
               </div>
               <h3 className="text-3xl font-bold text-white mb-2">Create New Poll</h3>
               <p className="text-secondary-300">
-                Create a prediction poll (temporarily stored locally)
+                Create a prediction poll stored in the database
               </p>
             </div>
 
@@ -237,17 +237,17 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 </div>
               </div>
 
-              {/* Local Storage Info */}
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+              {/* API Info */}
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
                 <div className="flex items-center space-x-2 mb-2">
-                  <FiUsers className="w-5 h-5 text-blue-400" />
-                  <span className="text-blue-300 font-medium">Local Storage Mode</span>
+                  <FiUsers className="w-5 h-5 text-green-400" />
+                  <span className="text-green-300 font-medium">API Integration</span>
                 </div>
                 <div className="text-sm text-secondary-300 space-y-1">
-                  <div>• Poll stored locally in your browser</div>
-                  <div>• No blockchain fees required</div>
-                  <div>• Vote counting simulated for testing</div>
-                  <div>• Ready for database integration later</div>
+                  <div>• Poll stored in database via API</div>
+                  <div>• Real-time vote counting</div>
+                  <div>• Persistent data across sessions</div>
+                  <div>• Ready for blockchain integration</div>
                 </div>
               </div>
 
@@ -271,10 +271,10 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreatingPoll || !isConnected}
+                  disabled={isCreatingApiPoll || !isConnected}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {isCreatingPoll ? 'Creating Poll...' : 'Create Poll'}
+                  {isCreatingApiPoll ? 'Creating Poll...' : 'Create Poll'}
                 </button>
               </div>
             </form>
