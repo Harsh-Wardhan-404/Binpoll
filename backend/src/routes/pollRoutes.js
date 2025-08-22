@@ -355,7 +355,10 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
     blockchainId,
     transactionHash,
     creatorAddress,
-    totalPool
+    totalPool,
+    requiredCredibility = 10,
+    pollPrice = '0.01',
+    maxVotes = 100
   } = req.body;
 
   // Validate input
@@ -398,7 +401,11 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
       total_pool: totalPool || '0',
       is_on_chain: true,
       blockchain_id: blockchainId,
-      transaction_hash: transactionHash
+      transaction_hash: transactionHash,
+      min_credibility_required: requiredCredibility,
+      max_voters: maxVotes,
+      current_voter_count: 0,
+      is_credibility_gated: requiredCredibility > 0
     })
     .select(`
       *,
@@ -504,6 +511,14 @@ router.post('/:id/vote', verifyAuth, asyncHandler(async (req, res) => {
     });
   }
 
+  // Check if poll has reached maximum voters
+  if (poll.max_voters && poll.total_votes >= poll.max_voters) {
+    return res.status(400).json({
+      success: false,
+      error: 'Poll has reached maximum number of voters'
+    });
+  }
+
   // Create vote record
   const { data: vote, error: voteError } = await supabase
     .from('votes')
@@ -531,7 +546,8 @@ router.post('/:id/vote', verifyAuth, asyncHandler(async (req, res) => {
     .from('polls')
     .update({
       total_votes: poll.total_votes + 1,
-      total_pool: (parseFloat(poll.total_pool) + parseFloat(amount)).toString()
+      total_pool: (parseFloat(poll.total_pool) + parseFloat(amount)).toString(),
+      current_voter_count: poll.current_voter_count + 1
     })
     .eq('id', pollId)
     .select()
@@ -739,6 +755,14 @@ router.post('/:id/vote/blockchain', verifyAuth, asyncHandler(async (req, res) =>
     });
   }
 
+  // Check if poll has reached maximum voters
+  if (poll.max_voters && poll.total_votes >= poll.max_voters) {
+    return res.status(400).json({
+      success: false,
+      error: 'Poll has reached maximum number of voters'
+    });
+  }
+
   // Create blockchain vote record
   const { data: vote, error: voteError } = await supabase
     .from('votes')
@@ -767,7 +791,8 @@ router.post('/:id/vote/blockchain', verifyAuth, asyncHandler(async (req, res) =>
     .from('polls')
     .update({
       total_votes: poll.total_votes + 1,
-      total_pool: (parseFloat(poll.total_pool) + parseFloat(amount)).toString()
+      total_pool: (parseFloat(poll.total_pool) + parseFloat(amount)).toString(),
+      current_voter_count: poll.current_voter_count + 1
     })
     .eq('id', poll.id)  // Use the actual database poll ID
     .select()

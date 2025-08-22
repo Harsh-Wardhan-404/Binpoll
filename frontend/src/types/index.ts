@@ -174,6 +174,9 @@ export interface CreatePollData {
   options: string[];
   durationMinutes: number;
   category?: string;
+  requiredCredibility?: number;
+  pollPrice?: string;
+  maxVotes?: number;
 }
 
 export interface PollsResponse {
