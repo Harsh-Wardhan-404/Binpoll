@@ -221,6 +221,108 @@ router.post('/', verifyAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// @desc    Create new blockchain poll
+// @route   POST /api/polls/blockchain
+// @access  Private
+router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
+  const {
+    title,
+    description,
+    options,
+    durationHours,
+    category = 'Blockchain',
+    blockchainId,
+    transactionHash,
+    creatorAddress,
+    totalPool
+  } = req.body;
+
+  // Validate input
+  if (!title || !description || !options || !durationHours || !blockchainId || !transactionHash || !creatorAddress) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: title, description, options, durationHours, blockchainId, transactionHash, creatorAddress'
+    });
+  }
+
+  if (!Array.isArray(options) || options.length < 2 || options.length > 5) {
+    return res.status(400).json({
+      success: false,
+      error: 'Options must be an array with 2-5 items'
+    });
+  }
+
+  if (durationHours < 1 || durationHours > 720) {
+    return res.status(400).json({
+      success: false,
+      error: 'Duration must be between 1 hour and 30 days'
+    });
+  }
+
+  const endTime = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+
+  const { data: poll, error } = await supabase
+    .from('polls')
+    .insert({
+      title: title.trim(),
+      description: description.trim(),
+      creator_id: req.user.id,
+      creator_address: req.user.walletAddress,
+      options: options.map(opt => opt.trim()),
+      category,
+      duration_hours: durationHours,
+      end_time: endTime.toISOString(),
+      is_active: true,
+      total_votes: 0,
+      total_pool: totalPool || '0',
+      is_on_chain: true,
+      blockchain_id: blockchainId,
+      transaction_hash: transactionHash
+    })
+    .select(`
+      *,
+      users (username, avatar_url)
+    `)
+    .single();
+
+  if (error) {
+    console.error('Error creating blockchain poll:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to create blockchain poll',
+      details: error.message
+    });
+  }
+
+  // Transform the response to match frontend expectations
+  const transformedPoll = {
+    id: poll.id,
+    title: poll.title,
+    description: poll.description,
+    options: poll.options.map((option, index) => ({
+      text: option,
+      votes: 0,
+      percentage: 0
+    })),
+    category: poll.category,
+    end_time: poll.end_time,
+    is_active: poll.is_active,
+    total_votes: poll.total_votes,
+    optionVotes: new Array(poll.options.length).fill(0),
+    totalVotes: poll.total_votes,
+    users: poll.users,
+    blockchain_id: poll.blockchain_id,
+    transaction_hash: poll.transaction_hash,
+    creator_address: poll.creator_address,
+    total_pool: poll.total_pool
+  };
+
+  res.status(201).json({
+    success: true,
+    data: transformedPoll
+  });
+}));
+
 // @desc    Vote on a poll
 // @route   POST /api/polls/:id/vote
 // @access  Private

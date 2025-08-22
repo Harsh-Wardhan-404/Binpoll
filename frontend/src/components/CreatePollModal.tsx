@@ -29,15 +29,40 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
     createPollError,
     createPollTxHash
   } = useSimplePoll(chainId);
-  const { createPoll, loading: isCreatingApiPoll } = usePolls();
+  const { createPoll, createBlockchainPoll, loading: isCreatingApiPoll } = usePolls();
 
-  // Close modal when blockchain transaction is confirmed
+  // Save blockchain poll to database when transaction is confirmed
   useEffect(() => {
-    if (createPollTxHash) {
-      handleClose();
-      alert('Poll created successfully on the blockchain!');
+    if (createPollTxHash && address) {
+      // Save the blockchain poll to the database
+      const saveBlockchainPoll = async () => {
+        try {
+          console.log('💾 Saving blockchain poll to database after transaction confirmation');
+          
+          await createBlockchainPoll({
+            title: title.trim(),
+            description: description.trim(),
+            options: options.filter(opt => opt.trim() !== ''),
+            durationHours: duration,
+            category: 'Blockchain',
+            blockchainId: '1', // Will be updated with actual poll ID from events
+            transactionHash: createPollTxHash,
+            creatorAddress: address,
+            totalPool: creatorDeposit
+          });
+          
+          handleClose();
+          alert('Poll created successfully on the blockchain and saved to database!');
+        } catch (error) {
+          console.error('❌ Error saving blockchain poll to database:', error);
+          handleClose();
+          alert('Poll created on blockchain but failed to save to database. Other users might not see it immediately.');
+        }
+      };
+      
+      saveBlockchainPoll();
     }
-  }, [createPollTxHash]);
+  }, [createPollTxHash, address, title, description, options, duration, creatorDeposit, createBlockchainPoll]);
 
   const addOption = () => {
     if (options.length < 5) {
@@ -98,9 +123,9 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
           
           // Don't close modal immediately - wait for transaction to be initiated
           alert('Please check your wallet and confirm the transaction to create your poll.');
-        } catch (contractError) {
+        } catch (contractError: any) {
           console.error('Contract error:', contractError);
-          alert(`Failed to create blockchain poll: ${contractError.message}`);
+          alert(`Failed to create blockchain poll: ${contractError.message || contractError}`);
           return;
         }
       } else {
