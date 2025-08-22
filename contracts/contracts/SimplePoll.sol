@@ -227,13 +227,78 @@ contract SimplePoll {
             (bool success1,) = payable(platform).call{value: platformFee}("");
             require(success1, "Platform fee transfer failed");
             
-            (bool success2,) = payable(poll.creator).call{value: creatorRefund}("");
+            (bool success2,) = payable(platform).call{value: creatorRefund}("");
             require(success2, "Creator refund transfer failed");
             
             emit PollSettled(_pollId, _winningOption, 0, 0, 0);
         }
     }
-    
+
+    // Automatic settlement based on most voted option
+    function autoSettlePoll(uint256 _pollId) external {
+        Poll storage poll = polls[_pollId];
+        require(poll.exists, "Poll does not exist");
+        require(block.timestamp >= poll.endTime, "Poll not yet ended");
+        require(!poll.settled, "Poll already settled");
+        
+        // Find the option with the most votes
+        uint256 winningOption = 0;
+        uint256 maxVotes = 0;
+        
+        for (uint256 i = 0; i < poll.options.length; i++) {
+            uint256 optionVotes = pollVoters[_pollId][i].length;
+            if (optionVotes > maxVotes) {
+                maxVotes = optionVotes;
+                winningOption = i;
+            }
+        }
+        
+        // Mark poll as settled
+        poll.settled = true;
+        poll.winningOption = winningOption;
+        
+        // Distribute rewards
+        address[] memory winners = pollVoters[_pollId][winningOption];
+        uint256 totalWinners = winners.length;
+        
+        if (totalWinners > 0) {
+            uint256 platformFee = (poll.totalPool * PLATFORM_FEE_PCT) / 100;
+            uint256 creatorFee = (poll.totalPool * CREATOR_FEE_PCT) / 100;
+            uint256 winnerPool = (poll.totalPool * WINNER_POOL_PCT) / 100;
+            uint256 rewardPerWinner = winnerPool / totalWinners;
+            
+            // Transfer fees
+            if (platformFee > 0) {
+                (bool success,) = payable(platform).call{value: platformFee}("");
+                require(success, "Platform fee transfer failed");
+            }
+            if (creatorFee > 0) {
+                (bool success,) = payable(poll.creator).call{value: creatorFee}("");
+                require(success, "Creator fee transfer failed");
+            }
+            
+            // Transfer rewards to winners
+            for (uint256 i = 0; i < totalWinners; i++) {
+                (bool success,) = payable(winners[i]).call{value: rewardPerWinner}("");
+                require(success, "Winner reward transfer failed");
+            }
+            
+            emit PollSettled(_pollId, winningOption, totalWinners, rewardPerWinner, winnerPool);
+        } else {
+            // No winners - return most to creator, small fee to platform
+            uint256 platformFee = (poll.totalPool * 20) / 100;
+            uint256 creatorRefund = poll.totalPool - platformFee;
+            
+            (bool success1,) = payable(platform).call{value: platformFee}("");
+            require(success1, "Platform fee transfer failed");
+            
+            (bool success2,) = payable(poll.creator).call{value: creatorRefund}("");
+            require(success2, "Creator refund transfer failed");
+            
+            emit PollSettled(_pollId, winningOption, 0, 0, 0);
+        }
+    }
+
     // View functions
     function getPoll(uint256 _pollId) external view returns (
         uint256 id,
