@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../config/database');
+const { 
+  UserQueries, 
+  PollQueries, 
+  VoteQueries, 
+  DatabaseUtils,
+  sql 
+} = require('../config/database-schema');
 const { validateUser } = require('../helpers/validation');
 const { asyncHandler } = require('../helpers/asyncHandler');
 const { verifyAuth } = require('../middleware/auth');
@@ -10,23 +16,24 @@ const { ethers } = require('ethers');
 // @route   GET /api/users
 // @access  Public
 router.get('/', asyncHandler(async (req, res) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .order('created_at', { ascending: false });
+  try {
+    const users = await sql`
+      SELECT * FROM users 
+      ORDER BY created_at DESC
+    `;
 
-  if (error) {
-    return res.status(400).json({
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({
       success: false,
-      error: error.message
+      error: 'Failed to fetch users'
     });
   }
-
-  res.status(200).json({
-    success: true,
-    count: data.length,
-    data
-  });
 }));
 
 // @desc    Get user profile with balance and stats
@@ -179,23 +186,27 @@ router.get('/profile', verifyAuth, asyncHandler(async (req, res) => {
 // @route   GET /api/users/:id
 // @access  Public
 router.get('/:id', asyncHandler(async (req, res) => {
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', req.params.id)
-    .single();
+  try {
+    const users = await UserQueries.getById(req.params.id);
+    
+    if (!users || users.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
 
-  if (error || !data) {
-    return res.status(404).json({
+    res.status(200).json({
+      success: true,
+      data: users[0]
+    });
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({
       success: false,
-      error: 'User not found'
+      error: 'Failed to fetch user'
     });
   }
-
-  res.status(200).json({
-    success: true,
-    data
-  });
 }));
 
 // @desc    Create new user
@@ -213,29 +224,24 @@ router.post('/', asyncHandler(async (req, res) => {
 
   const { wallet_address, username, avatar_url } = req.body;
 
-  const { data, error } = await supabase
-    .from('users')
-    .insert([{ 
-      wallet_address, 
-      username, 
-      avatar_url,
-      credibility_score: 60.00, // Default credibility for new users
-      reputation_level: 'Novice'
-    }])
-    .select()
-    .single();
+  try {
+    const newUser = await sql`
+      INSERT INTO users (wallet_address, username, avatar_url, credibility_score, reputation_level)
+      VALUES (${wallet_address.toLowerCase()}, ${username}, ${avatar_url}, 60.00, 'Novice')
+      RETURNING *
+    `;
 
-  if (error) {
-    return res.status(400).json({
+    res.status(201).json({
+      success: true,
+      data: newUser[0]
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(400).json({
       success: false,
-      error: error.message
+      error: 'Failed to create user'
     });
   }
-
-  res.status(201).json({
-    success: true,
-    data
-  });
 }));
 
 // @desc    Update user
