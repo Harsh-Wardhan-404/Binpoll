@@ -31,6 +31,14 @@ export interface Poll {
   transaction_hash?: string;
   // User vote information
   userVote?: number | null; // Index of the option the user voted for
+  // Additional fields from new API
+  total_pool?: number;
+  current_voter_count?: number;
+  is_credibility_gated?: boolean;
+  voting_weight_multiplier?: number;
+  creator_credibility_bonus?: number;
+  min_credibility_required?: number;
+  max_voters?: number | null;
 }
 
 export interface PollOption {
@@ -56,6 +64,16 @@ export interface PollsResponse {
     page: number;
     limit: number;
     total: number;
+  };
+}
+
+// New response structure for dashboard
+export interface DashboardPollsResponse {
+  success: boolean;
+  data: {
+    recents: Poll[];
+    hots: Poll[];
+    large_bets: Poll[];
   };
 }
 

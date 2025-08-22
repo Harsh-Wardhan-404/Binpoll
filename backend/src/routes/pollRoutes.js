@@ -11,6 +11,92 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, category, search, status } = req.query;
   const offset = (page - 1) * limit;
 
+  // If no category/search filter, return recents, hots, large_bets
+  if ((!category || category === 'All') && !search) {
+    // Recents: sorted by created_at desc
+    let recentsQuery = supabase
+      .from('polls')
+      .select(`
+        *,
+        users:creator_id (id, username, wallet_address, avatar_url)
+      `)
+      .order('created_at', { ascending: false })
+      .range(0, limit - 1);
+
+    // Hots: sorted by total_votes desc
+    let hotsQuery = supabase
+      .from('polls')
+      .select(`
+        *,
+        users:creator_id (id, username, wallet_address, avatar_url)
+      `)
+      .order('total_votes', { ascending: false })
+      .range(0, limit - 1);
+
+    // Large Bets: sorted by total_pool desc
+    let largeBetsQuery = supabase
+      .from('polls')
+      .select(`
+        *,
+        users:creator_id (id, username, wallet_address, avatar_url)
+      `)
+      .order('total_pool', { ascending: false })
+      .range(0, limit - 1);
+
+    // Run all queries in parallel
+    const [recentsRes, hotsRes, largeBetsRes] = await Promise.all([
+      recentsQuery,
+      hotsQuery,
+      largeBetsQuery
+    ]);
+
+    // Helper to add optionVotes and userVote
+    async function enrichPolls(polls) {
+      return Promise.all(
+        (polls || []).map(async (poll) => {
+          const { data: votes } = await supabase
+            .from('votes')
+            .select('option_index, voter_address')
+            .eq('poll_id', poll.id);
+
+          const optionVotes = poll.options.map((_, index) => {
+            return votes ? votes.filter(vote => vote.option_index === index).length : 0;
+          });
+
+          let userVote = null;
+          if (req.user && votes) {
+            const userVoteRecord = votes.find(vote =>
+              vote.voter_address && vote.voter_address.toLowerCase() === req.user.walletAddress.toLowerCase()
+            );
+            if (userVoteRecord) {
+              userVote = userVoteRecord.option_index;
+            }
+          }
+
+          return {
+            ...poll,
+            optionVotes,
+            totalVotes: votes ? votes.length : 0,
+            userVote
+          };
+        })
+      );
+    }
+
+    const recents = await enrichPolls(recentsRes.data);
+    const hots = await enrichPolls(hotsRes.data);
+    const large_bets = await enrichPolls(largeBetsRes.data);
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        recents,
+        hots,
+        large_bets
+      }
+    });
+  }
+
   let query = supabase
     .from('polls')
     .select(`

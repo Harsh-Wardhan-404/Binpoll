@@ -4,6 +4,15 @@ import type { Poll, CreatePollData, PollsResponse, CreatePollResponse, PollFilte
 
 export function usePolls() {
   const [polls, setPolls] = useState<Poll[]>([]);
+  const [dashboardPolls, setDashboardPolls] = useState<{
+    recents: Poll[];
+    hots: Poll[];
+    large_bets: Poll[];
+  }>({
+    recents: [],
+    hots: [],
+    large_bets: []
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState({
@@ -30,9 +39,29 @@ export function usePolls() {
       const response = await apiClient.getPolls(params);
       
       if (response.success) {
-        setPolls(response.data);
-        setPagination(response.pagination);
-        console.log('✅ fetchPolls: Success - loaded', response.data.length, 'polls');
+        // Check if this is a dashboard response (has recents, hots, large_bets)
+        if ('recents' in response.data && 'hots' in response.data && 'large_bets' in response.data) {
+          // Dashboard response structure
+          const dashboardData = response.data as any;
+          setDashboardPolls({
+            recents: dashboardData.recents || [],
+            hots: dashboardData.hots || [],
+            large_bets: dashboardData.large_bets || []
+          });
+          // Combine all polls for backward compatibility
+          const allPolls = [
+            ...(dashboardData.recents || []),
+            ...(dashboardData.hots || []),
+            ...(dashboardData.large_bets || [])
+          ];
+          setPolls(allPolls);
+          console.log('✅ fetchPolls: Success - loaded dashboard data');
+        } else {
+          // Regular filtered response structure
+          setPolls(response.data);
+          setPagination(response.pagination);
+          console.log('✅ fetchPolls: Success - loaded', response.data.length, 'polls');
+        }
       } else {
         setError('Failed to fetch polls');
         console.log('❌ fetchPolls: API returned error');
@@ -250,6 +279,7 @@ export function usePolls() {
 
   return {
     polls,
+    dashboardPolls,
     loading,
     error,
     pagination,
