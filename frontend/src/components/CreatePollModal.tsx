@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiX, HiPlus, HiMinus } from 'react-icons/hi';
 import { FiClock, FiEdit3, FiUsers } from 'react-icons/fi';
@@ -15,9 +15,10 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [options, setOptions] = useState(['', '']);
-  const [duration, setDuration] = useState(24);
+  const [duration, setDuration] = useState(60); // Default 1 hour in minutes
   const [creatorDeposit, setCreatorDeposit] = useState('0.002'); // Default minimum deposit
   const [useBlockchain, setUseBlockchain] = useState(true);
+  const processedTxHashes = useRef(new Set<string>());
 
   const chainId = useChainId();
   const { isConnected, address } = useAccount();
@@ -33,17 +34,20 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
 
   // Save blockchain poll to database when transaction is confirmed
   useEffect(() => {
-    if (createPollTxHash && address) {
+    if (createPollTxHash && address && !processedTxHashes.current.has(createPollTxHash)) {
+      // Mark this transaction as processed to prevent duplicate calls
+      processedTxHashes.current.add(createPollTxHash);
+      
       // Save the blockchain poll to the database
       const saveBlockchainPoll = async () => {
         try {
           console.log('💾 Saving blockchain poll to database after transaction confirmation');
           
-          await createBlockchainPoll({
+          const result = await createBlockchainPoll({
             title: title.trim(),
             description: description.trim(),
             options: options.filter(opt => opt.trim() !== ''),
-            durationHours: duration,
+            durationMinutes: duration,
             category: 'Blockchain',
             blockchainId: '1', // Will be updated with actual poll ID from events
             transactionHash: createPollTxHash,
@@ -51,8 +55,13 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
             totalPool: creatorDeposit
           });
           
-          handleClose();
-          alert('Poll created successfully on the blockchain and saved to database!');
+          if (result) {
+            handleClose();
+            alert('Poll created successfully on the blockchain and saved to database!');
+          } else {
+            handleClose();
+            alert('Poll created on blockchain but failed to save to database. Other users might not see it immediately.');
+          }
         } catch (error) {
           console.error('❌ Error saving blockchain poll to database:', error);
           handleClose();
@@ -134,7 +143,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
           title: title.trim(),
           description: description.trim(),
           options: validOptions,
-          durationHours: duration,
+          durationMinutes: duration,
           category: 'General'
         });
 
@@ -158,9 +167,11 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
     setTitle('');
     setDescription('');
     setOptions(['', '']);
-    setDuration(24);
+    setDuration(60);
     setCreatorDeposit('0.002');
     setUseBlockchain(true);
+    // Clear processed transaction hashes
+    processedTxHashes.current.clear();
   };
 
   const handleClose = () => {
@@ -289,20 +300,90 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
                 <label className="block text-sm font-medium text-secondary-300 mb-2">
                   Poll Duration
                 </label>
+                
+                {/* Quick preset buttons for development */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setDuration(0.5)} // 30 seconds
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      duration === 0.5 
+                        ? 'bg-primary-500 text-secondary-900' 
+                        : 'bg-white/10 text-secondary-300 hover:bg-white/20'
+                    }`}
+                  >
+                    30 sec
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuration(1)} // 1 minute
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      duration === 1 
+                        ? 'bg-primary-500 text-secondary-900' 
+                        : 'bg-white/10 text-secondary-300 hover:bg-white/20'
+                    }`}
+                  >
+                    1 min
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuration(5)} // 5 minutes
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      duration === 5 
+                        ? 'bg-primary-500 text-secondary-900' 
+                        : 'bg-white/10 text-secondary-300 hover:bg-white/20'
+                    }`}
+                  >
+                    5 min
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuration(60)} // 1 hour
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      duration === 60 
+                        ? 'bg-primary-500 text-secondary-900' 
+                        : 'bg-white/10 text-secondary-300 hover:bg-white/20'
+                    }`}
+                  >
+                    1 hour
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDuration(1440)} // 24 hours
+                    className={`px-3 py-1 text-xs rounded-full transition-all ${
+                      duration === 1440 
+                        ? 'bg-primary-500 text-secondary-900' 
+                        : 'bg-white/10 text-secondary-300 hover:bg-white/20'
+                    }`}
+                  >
+                    1 day
+                  </button>
+                </div>
+                
                 <div className="flex items-center space-x-4">
                   <FiClock className="w-5 h-5 text-secondary-400" />
                   <div className="flex-1">
                     <input
                       type="range"
-                      min="1"
-                      max="720"
+                      min="0.5"
+                      max="43200"
+                      step="0.5"
                       value={duration}
-                      onChange={(e) => setDuration(parseInt(e.target.value))}
+                      onChange={(e) => setDuration(parseFloat(e.target.value))}
                       className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer slider"
                     />
                     <div className="flex justify-between text-xs text-secondary-400 mt-1">
-                      <span>1h</span>
-                      <span>{duration} hours</span>
+                      <span>30 sec</span>
+                      <span>
+                        {duration < 1 
+                          ? `${duration * 60} seconds` 
+                          : duration < 60 
+                            ? `${duration} minutes` 
+                            : duration < 1440
+                              ? `${Math.round(duration / 60 * 10) / 10} hours`
+                              : `${Math.round(duration / 1440 * 10) / 10} days`
+                        }
+                      </span>
                       <span>30 days</span>
                     </div>
                   </div>

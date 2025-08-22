@@ -156,15 +156,15 @@ router.post('/', verifyAuth, asyncHandler(async (req, res) => {
     title,
     description,
     options,
-    durationHours,
+    durationMinutes,
     category = 'General'
   } = req.body;
 
   // Validate input
-  if (!title || !description || !options || !durationHours) {
+  if (!title || !description || !options || !durationMinutes) {
     return res.status(400).json({
       success: false,
-      error: 'Missing required fields: title, description, options, durationHours'
+      error: 'Missing required fields: title, description, options, durationMinutes'
     });
   }
 
@@ -175,14 +175,14 @@ router.post('/', verifyAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  if (durationHours < 1 || durationHours > 720) {
+  if (durationMinutes < 0.5 || durationMinutes > 43200) {
     return res.status(400).json({
       success: false,
-      error: 'Duration must be between 1 hour and 30 days'
+      error: 'Duration must be between 30 seconds (0.5 minutes) and 30 days (43200 minutes)'
     });
   }
 
-  const endTime = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+  const endTime = new Date(Date.now() + durationMinutes * 60 * 1000);
 
   const { data: poll, error } = await supabase
     .from('polls')
@@ -193,7 +193,7 @@ router.post('/', verifyAuth, asyncHandler(async (req, res) => {
       creator_address: req.user.walletAddress,
       options: options.map(opt => opt.trim()),
       category,
-      duration_hours: durationHours,
+      duration_hours: durationMinutes / 60, // Convert minutes to hours for database storage
       end_time: endTime.toISOString(),
       is_active: true,
       total_votes: 0,
@@ -241,7 +241,7 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
     title,
     description,
     options,
-    durationHours,
+    durationMinutes,
     category = 'Blockchain',
     blockchainId,
     transactionHash,
@@ -250,10 +250,10 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
   } = req.body;
 
   // Validate input
-  if (!title || !description || !options || !durationHours || !blockchainId || !transactionHash || !creatorAddress) {
+  if (!title || !description || !options || !durationMinutes || !blockchainId || !transactionHash || !creatorAddress) {
     return res.status(400).json({
       success: false,
-      error: 'Missing required fields: title, description, options, durationHours, blockchainId, transactionHash, creatorAddress'
+      error: 'Missing required fields: title, description, options, durationMinutes, blockchainId, transactionHash, creatorAddress'
     });
   }
 
@@ -264,14 +264,14 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
     });
   }
 
-  if (durationHours < 1 || durationHours > 720) {
+  if (durationMinutes < 0.5 || durationMinutes > 43200) {
     return res.status(400).json({
       success: false,
-      error: 'Duration must be between 1 hour and 30 days'
+      error: 'Duration must be between 30 seconds (0.5 minutes) and 30 days (43200 minutes)'
     });
   }
 
-  const endTime = new Date(Date.now() + durationHours * 60 * 60 * 1000);
+  const endTime = new Date(Date.now() + durationMinutes * 60 * 1000);
 
   const { data: poll, error } = await supabase
     .from('polls')
@@ -282,7 +282,7 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
       creator_address: req.user.walletAddress,
       options: options.map(opt => opt.trim()),
       category,
-      duration_hours: durationHours,
+      duration_hours: durationMinutes / 60, // Convert minutes to hours for database storage
       end_time: endTime.toISOString(),
       is_active: true,
       total_votes: 0,

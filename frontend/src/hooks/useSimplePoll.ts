@@ -268,8 +268,8 @@ export const useSimplePoll = (chainId?: number) => {
   const { isLoading: isSettleConfirming } = useWaitForTransactionReceipt({ hash: settleTxHash });
 
   // Helper functions
-  const createNewPoll = (title: string, description: string, options: string[], durationHours: number, creatorDepositEth: string) => {
-    console.log('🚀 Creating new poll:', { title, description, options, durationHours, creatorDepositEth });
+  const createNewPoll = (title: string, description: string, options: string[], durationMinutes: number, creatorDepositEth: string) => {
+    console.log('🚀 Creating new poll:', { title, description, options, durationMinutes, creatorDepositEth });
     console.log('📍 Contract address:', contractAddress);
     console.log('💰 Min creator deposit:', minCreatorDeposit);
     
@@ -286,10 +286,14 @@ export const useSimplePoll = (chainId?: number) => {
       throw new Error(`Creator deposit must be at least ${formatEther(minCreatorDeposit)} BNB`);
     }
     
+    // Convert minutes to seconds for the contract
+    const durationInSeconds = Math.floor(durationMinutes * 60);
+    console.log('⏰ Duration converted:', `${durationMinutes} minutes = ${durationInSeconds} seconds`);
+    
     console.log('📞 Calling createPoll with:', {
       address: contractAddress,
       functionName: 'createPoll',
-      args: [title, description, options, BigInt(durationHours)],
+      args: [title, description, options, BigInt(durationInSeconds)],
       value: depositAmount.toString(),
     });
     
@@ -298,7 +302,7 @@ export const useSimplePoll = (chainId?: number) => {
         address: contractAddress,
         abi: SIMPLE_POLL_ABI,
         functionName: 'createPoll',
-        args: [title, description, options, BigInt(durationHours)],
+        args: [title, description, options, BigInt(durationInSeconds)],
         value: depositAmount,
       });
       console.log('✅ createPoll function called successfully');
