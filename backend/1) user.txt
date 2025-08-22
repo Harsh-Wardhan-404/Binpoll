@@ -1,0 +1,43 @@
+1) user
+	user_id
+	account_address
+	user_name
+	photo_key
+	
+
+
+2) polls
+	poll_id	
+	topic
+	description
+	creator_id ( user.user_id) 
+	number_of_polls
+	limits_per_poll
+	creator_fee 
+	random_winner ( 1/2/3 --> ranks [1st only , 2nd and 1st prize, ....] ) int
+	end_date
+	start_date
+	
+
+3) poll_options
+	poll_option_id
+	poll_id
+	option text
+	 
+
+4) poll_options_voters
+	poll_option_id 
+	voter_id  (user_id)
+	comments ( reason) 
+	
+
+
+	
+DB PASSWORD : gnggcU7LhdsAH1cZ
+
+	
+
+	
+	 
+	
+	

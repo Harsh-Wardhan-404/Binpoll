@@ -1,0 +1,169 @@
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HiMenu, HiX } from 'react-icons/hi';
+import { FaWallet } from 'react-icons/fa';
+import { FiTrendingUp } from 'react-icons/fi';
+import { gsap } from 'gsap';
+
+export const Navigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { label: 'Markets', href: '#markets' },
+    { label: 'How it Works', href: '#how-it-works' },
+    { label: 'Features', href: '#features' },
+    { label: 'Community', href: '#community' },
+  ];
+
+  const connectWallet = () => {
+    // Placeholder for wallet connection
+    console.log('Connect wallet clicked');
+  };
+
+  const navVariants = {
+    hidden: { y: -100, opacity: 0 },
+    visible: { 
+      y: 0, 
+      opacity: 1,
+      transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }
+    }
+  };
+
+  const mobileMenuVariants = {
+    closed: {
+      opacity: 0,
+      height: 0,
+      transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
+    },
+    open: {
+      opacity: 1,
+      height: 'auto',
+      transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
+    }
+  };
+
+  return (
+    <motion.nav
+      variants={navVariants}
+      initial="hidden"
+      animate="visible"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'glass-effect border-b border-primary-500/20' 
+          : 'bg-transparent'
+      }`}
+    >
+      <div className="container-custom">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo */}
+          <motion.div 
+            className="flex items-center space-x-2"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="w-10 h-10 bg-golden-gradient rounded-lg flex items-center justify-center">
+              <FiTrendingUp className="w-6 h-6 text-secondary-900" />
+            </div>
+            <span className="text-2xl font-display font-bold text-gradient">
+              Binpoll
+            </span>
+          </motion.div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navItems.map((item, index) => (
+              <motion.a
+                key={item.label}
+                href={item.href}
+                className="text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
+                whileHover={{ y: -2 }}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 + 0.3 }}
+              >
+                {item.label}
+              </motion.a>
+            ))}
+          </div>
+
+          {/* Wallet Connection Button */}
+          <div className="hidden md:block">
+            <motion.button
+              onClick={connectWallet}
+              className="btn-primary flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <FaWallet className="w-5 h-5" />
+              <span>Connect Wallet</span>
+            </motion.button>
+          </div>
+
+          {/* Mobile Menu Button */}
+          <motion.button
+            className="md:hidden text-secondary-200 hover:text-primary-400 transition-colors duration-300"
+            onClick={() => setIsOpen(!isOpen)}
+            whileTap={{ scale: 0.95 }}
+          >
+            {isOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
+          </motion.button>
+        </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              variants={mobileMenuVariants}
+              initial="closed"
+              animate="open"
+              exit="closed"
+              className="md:hidden bg-secondary-800/95 backdrop-blur-lg border-t border-primary-500/20"
+            >
+              <div className="py-6 space-y-4">
+                {navItems.map((item, index) => (
+                  <motion.a
+                    key={item.label}
+                    href={item.href}
+                    className="block px-4 py-2 text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
+                    onClick={() => setIsOpen(false)}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    {item.label}
+                  </motion.a>
+                ))}
+                <motion.button
+                  onClick={() => {
+                    connectWallet();
+                    setIsOpen(false);
+                  }}
+                  className="w-full mx-4 btn-primary flex items-center justify-center space-x-2"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <FaWallet className="w-5 h-5" />
+                  <span>Connect Wallet</span>
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.nav>
+  );
+};
