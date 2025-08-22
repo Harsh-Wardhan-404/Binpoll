@@ -197,13 +197,26 @@ const SIMPLE_POLL_ABI = [
     ],
     "name": "VoteCast",
     "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_pollId",
+        "type": "uint256"
+      }
+    ],
+    "name": "autoSettlePoll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;
 
 // Contract addresses (you'll need to deploy and update these)
 const CONTRACT_ADDRESSES = {
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, // Default Hardhat address
-  bscTestnet: '0x4EBE6679a99Fbf751D3E90784bA7d613015932B1' as Address, // Update after deployment
+  bscTestnet: '0xa5119569CD9393f2C10737E25a677fB6dbeE56f5' as Address, // Updated with automatic settlement support
 };
 
 export interface Poll {
@@ -343,6 +356,15 @@ export const useSimplePoll = (chainId?: number) => {
     });
   };
 
+  const autoSettlePollById = (pollId: number) => {
+    settlePoll({
+      address: contractAddress,
+      abi: SIMPLE_POLL_ABI,
+      functionName: 'autoSettlePoll',
+      args: [BigInt(pollId)],
+    });
+  };
+
   const getPollById = (pollId: number) => {
     return useReadContract({
       address: contractAddress,
@@ -456,6 +478,7 @@ export const useSimplePoll = (chainId?: number) => {
     addCreatorDeposit,
     voteOnPoll,
     settlePollById,
+    autoSettlePollById,
 
     // Read functions
     getPollById,
