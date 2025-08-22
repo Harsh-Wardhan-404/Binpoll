@@ -6,12 +6,12 @@ const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   
   // Database Configuration
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://postgres.nqesgzdxvyncupwgqxyv:gnggcU7LhdsAH1cZ@aws-1-ap-south-1.pooler.supabase.com:6543/postgres',
+  databaseUrl: process.env.DATABASE_URL ,
   
   // Supabase Configuration
   supabase: {
     url: process.env.SUPABASE_URL || 'https://nqesgzdxvyncupwgqxyv.supabase.co',
-    anonKey: process.env.SUPABASE_ANON_KEY || 'your_supabase_anon_key_here',
+    anonKey: process.env.SUPABASE_API_KEY || 'your_supabase_anon_key_here',
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || 'your_service_role_key_here'
   },
   

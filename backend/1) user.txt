@@ -14,7 +14,7 @@
 	number_of_polls
 	limits_per_poll
 	creator_fee 
-	random_winner ( 1/2/3 --> ranks [1st only , 2nd and 1st prize, ....] ) int
+	random_winner_rank ( 1/2/3 --> ranks [1st only , 2nd and 1st prize, ....] ) int  * remove this from the table 
 	end_date
 	start_date
 	
@@ -29,6 +29,13 @@
 	poll_option_id 
 	voter_id  (user_id)
 	comments ( reason) 
+	
+
+5) poll_results: * add this new table
+	poll_id	
+	user_id	
+	winner_type (correct_poll/ random_winner)
+	
 	
 
 

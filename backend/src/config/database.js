@@ -1,40 +1,39 @@
+const postgres = require('postgres');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const config = require('./environment');
 
-// Supabase client configuration
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Direct PostgreSQL connection for migrations and advanced operations
-const { Pool } = require('pg');
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+// Create database connection using the configuration
+const sql = postgres(config.databaseUrl, {
+  // Connection options
+  max: 10, // Maximum number of connections
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  connect_timeout: 10, // Connection timeout in seconds
+  
+  // SSL configuration for production
+  ssl: config.isProduction ? { rejectUnauthorized: false } : false,
+  
+  // Connection event handlers
+  onnotice: () => {}, // Suppress notice messages
+  onparameter: () => {}, // Suppress parameter messages
 });
 
-// Test database connection
+// Create Supabase client
+const supabase = createClient(config.supabase.url, config.supabase.anonKey);
+
+// Test connection function
 const testConnection = async () => {
   try {
-    const client = await pool.connect();
-    console.log('Database connected successfully');
-    client.release();
-  } catch (err) {
-    console.error('Database connection error:', err);
-    process.exit(1);
+    await sql`SELECT 1`;
+    console.log('✅ Database connected successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error.message);
+    throw error;
   }
 };
 
 module.exports = {
+  sql,
   supabase,
-  pool,
   testConnection
 };
