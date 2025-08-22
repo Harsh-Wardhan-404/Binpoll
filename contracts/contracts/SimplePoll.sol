@@ -71,14 +71,14 @@ contract SimplePoll {
         string memory _title,
         string memory _description,
         string[] memory _options,
-        uint256 _durationInHours
+        uint256 _durationInSeconds
     ) external payable returns (uint256) {
         require(_options.length >= 2 && _options.length <= 5, "2-5 options required");
-        require(_durationInHours > 0 && _durationInHours <= 720, "Duration must be 1 hour to 30 days");
+        require(_durationInSeconds >= 30 && _durationInSeconds <= 2592000, "Duration must be 30 seconds to 30 days (2592000 seconds)");
         require(msg.value >= MIN_CREATOR_DEPOSIT, "Creator deposit too low");
         
         uint256 pollId = nextPollId++;
-        uint256 endTime = block.timestamp + (_durationInHours * 1 hours);
+        uint256 endTime = block.timestamp + _durationInSeconds;
         
         polls[pollId] = Poll({
             id: pollId,
