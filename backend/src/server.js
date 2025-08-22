@@ -9,6 +9,9 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const pollRoutes = require('./routes/pollRoutes');
 
+// Import services
+const autoSettlementService = require('./services/autoSettlementService');
+
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
 const notFound = require('./middleware/notFound');
@@ -80,6 +83,10 @@ const startServer = async () => {
         console.log(`🔑 Auth endpoint: http://localhost:${config.port}/api/auth/wallet`);
         console.log(`📊 Polls endpoint: http://localhost:${config.port}/api/polls`);
       }
+      
+      // Start auto-settlement service
+      autoSettlementService.start();
+      console.log(`🤖 Auto-settlement service: Started`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

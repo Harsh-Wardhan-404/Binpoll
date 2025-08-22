@@ -31,6 +31,12 @@ export interface Poll {
   transaction_hash?: string;
   // User vote information
   userVote?: number | null; // Index of the option the user voted for
+  // Settlement information
+  settled?: boolean;
+  winningOption?: number;
+  totalPool?: string;
+  creatorAddress?: string;
+  // Database fields
   // Additional fields from new API
   total_pool?: number;
   current_voter_count?: number;
