@@ -426,11 +426,7 @@ export const useSimplePoll = (chainId?: number) => {
       value: entryFee,
     });
 
-    console.log('🔄 Vote on poll:', {
-      pollId,
-      optionId,
-      entryFee,
-    });
+
   };
 
   const settlePollById = (pollId: number, winningOptionId: number) => {

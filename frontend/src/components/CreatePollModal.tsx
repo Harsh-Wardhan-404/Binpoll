@@ -129,6 +129,11 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
       const saveBlockchainPoll = async () => {
         try {
           console.log('💾 Saving blockchain poll to database after transaction confirmation');
+
+          console.log('💰 Creator deposit:', creatorDeposit);
+          console.log('💰 Total pool:', creatorDeposit);
+          console.log('Duration:', duration);
+
           
           const result = await createBlockchainPoll({
             title: title.trim(),
@@ -214,6 +219,7 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
       if (useBlockchain) {
         // Create poll on blockchain with creator deposit
         try {
+          console.log('🚀 Creating new poll:', { title, description, options, duration, creatorDeposit });
           createNewPoll(
             title.trim(),
             description.trim(),

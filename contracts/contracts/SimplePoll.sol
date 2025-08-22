@@ -99,6 +99,8 @@ contract SimplePoll {
         
         uint256 pollId = nextPollId++;
         uint256 endTime = block.timestamp + _durationInSeconds;
+
+      
         
         polls[pollId] = Poll({
             id: pollId,
