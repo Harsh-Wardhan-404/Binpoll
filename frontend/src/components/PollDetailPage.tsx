@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount, useChainId } from 'wagmi';
 import { useSimplePoll } from '../hooks/useSimplePoll';
-import { apiClient } from '../lib/api';
+import { bscTestnet, hardhat } from 'wagmi/chains';
 import type { PollDetail as PollDetailType } from '../types';
 import PollDetail from './PollDetail';
 
@@ -11,12 +11,12 @@ const PollDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { address } = useAccount();
   const chainId = useChainId();
+  const isCorrectNetwork = chainId === bscTestnet.id || chainId === hardhat.id;
 
   // Get blockchain voting info if it's a blockchain poll
   const { 
     entryFee, 
-    isVoting: isBlockchainVoting, 
-    voteTxHash
+    voteOnPoll: blockchainVote
   } = useSimplePoll(chainId);
 
   const handleBack = () => {
@@ -24,7 +24,15 @@ const PollDetailPage: React.FC = () => {
   };
 
   const handleVote = async (poll: PollDetailType, optionIndex: number) => {
-    if (!address) return;
+    if (!address) {
+      alert('Please connect your wallet to vote');
+      return;
+    }
+
+    if (!isCorrectNetwork) {
+      alert('Please connect to the correct network (BSC Testnet or Hardhat)');
+      return;
+    }
 
     try {
       if (poll?.is_on_chain) {
@@ -36,15 +44,21 @@ const PollDetailPage: React.FC = () => {
         const blockchainId = poll.blockchain_id;
         const blockchainIdNum = typeof blockchainId === 'string' ? parseInt(blockchainId) : Number(blockchainId);
         
+        if (!blockchainIdNum || isNaN(blockchainIdNum)) {
+          throw new Error('Invalid blockchain poll ID');
+        }
+        
         // Call the blockchain voting function
-        // Note: This would need to be implemented in the PollDetail component
-        // or passed through a context/hook
+        console.log('🎯 Voting on blockchain poll:', blockchainIdNum, 'option:', optionIndex);
+        await blockchainVote(blockchainIdNum, optionIndex);
         
         alert(`Please confirm the transaction in your wallet to submit your vote with ${entryFee} BNB!`);
       } else {
         // For API polls, use the regular voting flow
-        // This would need to be implemented based on your API structure
         console.log('Voting on API poll:', poll.id, optionIndex);
+        // This would need to be implemented based on your API structure
+        // You can add API voting logic here
+        alert('API voting not yet implemented');
       }
     } catch (error) {
       console.error('Failed to vote:', error);
