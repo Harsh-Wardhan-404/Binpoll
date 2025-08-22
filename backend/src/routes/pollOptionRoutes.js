@@ -8,31 +8,66 @@ const { asyncHandler } = require('../helpers/asyncHandler');
 // @route   GET /api/poll-options/poll/:pollId
 // @access  Public
 router.get('/poll/:pollId', asyncHandler(async (req, res) => {
-  const { data, error } = await supabase
-    .from('poll_options')
-    .select(`
-      *,
-      polls (poll_id, topic),
-      poll_options_voters (
-        voter_id,
-        comments,
-        users:voter_id (user_name)
-      )
-    `)
-    .eq('poll_id', req.params.pollId)
-    .order('created_at', { ascending: true });
+  const { data: poll, error: pollError } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('id', req.params.pollId)
+    .single();
 
-  if (error) {
-    return res.status(400).json({
+  if (pollError || !poll) {
+    return res.status(404).json({
       success: false,
-      error: error.message
+      error: 'Poll not found'
     });
   }
 
+  // Get votes for this poll to calculate option statistics
+  const { data: votes, error: votesError } = await supabase
+    .from('votes')
+    .select(`
+      option_index,
+      vote_weight,
+      voter_credibility_at_time,
+      users:voter_id (username, avatar_url, credibility_score)
+    `)
+    .eq('poll_id', req.params.pollId);
+
+  if (votesError) {
+    return res.status(400).json({
+      success: false,
+      error: votesError.message
+    });
+  }
+
+  // Create options array with vote statistics
+  const options = poll.options.map((option, index) => {
+    const optionVotes = votes.filter(vote => vote.option_index === index);
+    const totalWeight = optionVotes.reduce((sum, vote) => sum + parseFloat(vote.vote_weight), 0);
+    const totalVotes = optionVotes.length;
+    const averageCredibility = optionVotes.length > 0 
+      ? optionVotes.reduce((sum, vote) => sum + vote.voter_credibility_at_time, 0) / optionVotes.length 
+      : 0;
+
+    return {
+      optionIndex: index,
+      optionText: option,
+      totalVotes,
+      totalWeight,
+      averageCredibility: parseFloat(averageCredibility.toFixed(2)),
+      percentage: votes.length > 0 ? parseFloat(((totalWeight / votes.reduce((sum, v) => sum + parseFloat(v.vote_weight), 0)) * 100).toFixed(2)) : 0,
+      voters: optionVotes.map(vote => ({
+        username: vote.users.username,
+        avatarUrl: vote.users.avatar_url,
+        credibilityScore: vote.users.credibility_score,
+        voteWeight: vote.vote_weight
+      }))
+    };
+  });
+
   res.status(200).json({
     success: true,
-    count: data.length,
-    data
+    count: options.length,
+    data: options
   });
 }));
 

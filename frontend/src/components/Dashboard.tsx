@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { gsap } from 'gsap';
 import { useAccount, useChainId } from 'wagmi';
 import { bscTestnet, hardhat } from 'wagmi/chains';
-import PollCard from './PollCard';
+import PollCardSmall from './PollCardSmall';
+import PollDetail from './PollDetail';
 import SearchBar from './SearchBar';
 import ScrollVelocity from './ScrollVelocity';
 import CreatePollModal from './CreatePollModal';
@@ -20,6 +21,7 @@ const Dashboard: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [allPolls, setAllPolls] = useState<Poll[]>([]);
   const [blockchainPollsLoading, setBlockchainPollsLoading] = useState(false);
+  const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // API hooks
@@ -152,39 +154,12 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Transform poll data to match PollCard interface
-  const transformPollForCard = (poll: Poll) => {
-    const totalVotes = poll.totalVotes || 0;
-    
-    // Handle different poll formats (API vs Blockchain)
-    const options = poll.isBlockchain 
-      ? poll.options.map((option, index) => ({
-          id: `${poll.id}-${index}`,
-          text: option.text,
-          votes: option.votes,
-          percentage: option.percentage
-        }))
-      : poll.options.map((option, index) => ({
-          id: `${poll.id}-${index}`,
-          text: typeof option === 'string' ? option : option.text,
-          votes: poll.optionVotes?.[index] || 0,
-          percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
-        }));
+  const handlePollClick = (poll: Poll) => {
+    setSelectedPoll(poll);
+  };
 
-    return {
-      id: poll.id,
-      title: poll.title,
-      description: poll.description,
-      options,
-      totalVotes,
-      endDate: poll.endDate || poll.end_time || '',
-      isActive: poll.isActive ?? (poll.is_active ? new Date(poll.end_time || '') > new Date() : false),
-      category: poll.category,
-      creator: poll.creator || {
-        name: poll.users?.username || 'Unknown',
-        avatar: poll.users?.avatar_url || ''
-      }
-    };
+  const handleBackToDashboard = () => {
+    setSelectedPoll(null);
   };
 
   const handleSearch = (query: string) => {
@@ -257,6 +232,17 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // Show poll detail if a poll is selected
+  if (selectedPoll) {
+    return (
+      <PollDetail
+        poll={selectedPoll}
+        onBack={handleBackToDashboard}
+        onVote={handleVote}
+      />
+    );
+  }
+
   if (isLoading || blockchainPollsLoading) {
     return (
       <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
@@ -292,7 +278,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Search and Filters */}
-            <div className="max-w-4xl mx-auto mb-12">
+            <div className="max-w-6xl mx-auto mb-12">
               <SearchBar onSearch={handleSearch} className="mb-8" />
               
               {/* Category Filters and Create Poll Button */}
@@ -353,24 +339,15 @@ const Dashboard: React.FC = () => {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="grid gap-6 max-w-4xl mx-auto"
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
                 >
                   {filteredPolls.map((poll, index) => (
-                    <motion.div
+                    <PollCardSmall
                       key={poll.id}
-                      initial={{ opacity: 0, y: 50 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: index * 0.1 }}
-                    >
-                      <PollCard
-                        {...transformPollForCard(poll)}
-                        onVote={(pollId, optionId) => {
-                          // Extract option index from optionId (format: "pollId-index")
-                          const optionIndex = parseInt(optionId.split('-')[1]);
-                          handleVote(pollId, optionIndex);
-                        }}
-                      />
-                    </motion.div>
+                      poll={poll}
+                      onClick={() => handlePollClick(poll)}
+                      index={index}
+                    />
                   ))}
                 </motion.div>
               ) : (

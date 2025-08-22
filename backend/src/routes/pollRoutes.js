@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { supabase } = require('../config/supabase');
+const { supabase } = require('../config/database');
 const { verifyAuth, optionalAuth } = require('../middleware/auth');
 const { asyncHandler } = require('../helpers/asyncHandler');
 
@@ -389,6 +389,162 @@ router.get('/my-votes', verifyAuth, asyncHandler(async (req, res) => {
     success: true,
     count: data.length,
     data
+  });
+}));
+
+// @desc    Get polls by minimum credibility requirement
+// @route   GET /api/polls/credibility/:minCredibility
+// @access  Public
+router.get('/credibility/:minCredibility', optionalAuth, asyncHandler(async (req, res) => {
+  const { minCredibility } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  const offset = (page - 1) * limit;
+
+  const { data, error, count } = await supabase
+    .from('polls')
+    .select(`
+      *,
+      users:creator_id (id, username, wallet_address, avatar_url, credibility_score)
+    `)
+    .gte('min_credibility_required', parseFloat(minCredibility))
+    .eq('is_active', true)
+    .gte('end_time', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    count: data.length,
+    data,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: count
+    }
+  });
+}));
+
+// @desc    Get polls with voting limits
+// @route   GET /api/polls/limited
+// @access  Public
+router.get('/limited', optionalAuth, asyncHandler(async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  const offset = (page - 1) * limit;
+
+  const { data, error, count } = await supabase
+    .from('polls')
+    .select(`
+      *,
+      users:creator_id (id, username, wallet_address, avatar_url)
+    `)
+    .not('max_voters', 'is', null)
+    .eq('is_active', true)
+    .gte('end_time', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) {
+    return res.status(400).json({
+      success: false,
+      error: error.message
+    });
+  }
+
+  res.status(200).json({
+    success: true,
+    count: data.length,
+    data,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total: count
+    }
+  });
+}));
+
+// @desc    Get poll results with credibility analysis
+// @route   GET /api/polls/:id/results
+// @access  Public
+router.get('/:id/results', optionalAuth, asyncHandler(async (req, res) => {
+  const { data: poll, error: pollError } = await supabase
+    .from('polls')
+    .select(`
+      *,
+      users:creator_id (id, username, wallet_address, avatar_url)
+    `)
+    .eq('id', req.params.id)
+    .single();
+
+  if (pollError || !poll) {
+    return res.status(404).json({
+      success: false,
+      error: 'Poll not found'
+    });
+  }
+
+  // Get votes with credibility information
+  const { data: votes, error: votesError } = await supabase
+    .from('votes')
+    .select(`
+      option_index,
+      vote_weight,
+      voter_credibility_at_time,
+      users:voter_id (username, avatar_url, credibility_score)
+    `)
+    .eq('poll_id', req.params.id);
+
+  if (votesError) {
+    return res.status(400).json({
+      success: false,
+      error: votesError.message
+    });
+  }
+
+  // Calculate weighted results
+  const optionResults = poll.options.map((option, index) => {
+    const optionVotes = votes.filter(vote => vote.option_index === index);
+    const totalWeight = optionVotes.reduce((sum, vote) => sum + parseFloat(vote.vote_weight), 0);
+    const totalVotes = optionVotes.length;
+    const averageCredibility = optionVotes.length > 0 
+      ? optionVotes.reduce((sum, vote) => sum + vote.voter_credibility_at_time, 0) / optionVotes.length 
+      : 0;
+
+    return {
+      option: option,
+      optionIndex: index,
+      totalVotes,
+      totalWeight,
+      averageCredibility: parseFloat(averageCredibility.toFixed(2)),
+      percentage: votes.length > 0 ? parseFloat(((totalWeight / votes.reduce((sum, v) => sum + parseFloat(v.vote_weight), 0)) * 100).toFixed(2)) : 0
+    };
+  });
+
+  // Get poll result if available
+  const { data: pollResult } = await supabase
+    .from('poll_results')
+    .select('*')
+    .eq('poll_id', req.params.id)
+    .single();
+
+  res.status(200).json({
+    success: true,
+    data: {
+      poll,
+      results: optionResults,
+      totalVotes: votes.length,
+      totalWeightedVotes: votes.reduce((sum, vote) => sum + parseFloat(vote.vote_weight), 0),
+      averageCredibility: votes.length > 0 
+        ? parseFloat((votes.reduce((sum, vote) => sum + vote.voter_credibility_at_time, 0) / votes.length).toFixed(2))
+        : 0,
+      pollResult
+    }
   });
 }));
 
