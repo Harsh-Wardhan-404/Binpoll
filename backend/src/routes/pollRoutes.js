@@ -445,6 +445,117 @@ router.post('/:id/vote', verifyAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// @desc    Manually trigger settlement for a blockchain poll (for testing/admin)
+// @route   POST /api/polls/:id/manual-settle
+// @access  Public (for testing purposes)
+router.post('/:id/manual-settle', asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  
+  try {
+    // Get the poll
+    const { data: poll, error: pollError } = await supabase
+      .from('polls')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (pollError || !poll) {
+      return res.status(404).json({
+        success: false,
+        error: 'Poll not found'
+      });
+    }
+
+    // Check if poll has ended
+    const pollEndTime = new Date(poll.end_time || poll.endDate);
+    if (new Date() < pollEndTime) {
+      return res.status(400).json({
+        success: false,
+        error: 'Poll has not ended yet'
+      });
+    }
+
+    // Check if already settled
+    if (poll.settled) {
+      return res.status(400).json({
+        success: false,
+        error: 'Poll already settled'
+      });
+    }
+
+    // Get all votes for this poll
+    const { data: votes, error: votesError } = await supabase
+      .from('votes')
+      .select('option_index, voter_address')
+      .eq('poll_id', id);
+
+    if (votesError) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch votes'
+      });
+    }
+
+    // Count votes for each option
+    const voteCounts = {};
+    poll.options.forEach((_, index) => {
+      voteCounts[index] = 0;
+    });
+
+    votes.forEach(vote => {
+      if (voteCounts[vote.option_index] !== undefined) {
+        voteCounts[vote.option_index]++;
+      }
+    });
+
+    // Find the winning option (most votes)
+    let winningOption = 0;
+    let maxVotes = 0;
+    
+    Object.entries(voteCounts).forEach(([optionIndex, voteCount]) => {
+      if (voteCount > maxVotes) {
+        maxVotes = voteCount;
+        winningOption = parseInt(optionIndex);
+      }
+    });
+
+    // Update poll as settled
+    const { error: updateError } = await supabase
+      .from('polls')
+      .update({
+        settled: true,
+        winning_option: winningOption,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (updateError) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update poll status'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Poll automatically settled',
+      data: {
+        pollId: id,
+        winningOption,
+        totalVotes: votes.length,
+        voteCounts
+      }
+    });
+
+  } catch (error) {
+    console.error('Auto-settlement error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error during auto-settlement'
+    });
+    }
+}));
+
 // @desc    Vote on a blockchain poll
 // @route   POST /api/polls/:id/vote/blockchain
 // @access  Private

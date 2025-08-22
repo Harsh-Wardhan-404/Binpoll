@@ -19,16 +19,13 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   const [isVoting, setIsVoting] = useState(false);
   const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
   const [pendingVote, setPendingVote] = useState<number | null>(null);
-  const [showSettlementModal, setShowSettlementModal] = useState(false);
-  const [selectedWinningOption, setSelectedWinningOption] = useState<number | null>(null);
+
   
   // Get blockchain voting info if it's a blockchain poll
   const { 
     entryFee, 
     isVoting: isBlockchainVoting, 
-    voteTxHash,
-    autoSettlePollById,
-    isSettling
+    voteTxHash
   } = useSimplePoll(chainId);
   
   // Check if user has voted on this poll
@@ -104,42 +101,14 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
     setPendingVote(null);
   };
 
-  const handleSettlement = () => {
-    setShowSettlementModal(true);
-  };
 
-  const confirmSettlement = () => {
-    if (poll && poll.blockchainId) {
-      try {
-        const blockchainIdStr = typeof poll.blockchainId === 'string' ? poll.blockchainId : String(poll.blockchainId);
-        autoSettlePollById(parseInt(blockchainIdStr));
-        setShowSettlementModal(false);
-        setSelectedWinningOption(null);
-        alert('Automatic settlement initiated! The most voted option will automatically win and rewards will be distributed.');
-      } catch (error) {
-        console.error('Settlement error:', error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        alert(`Failed to settle poll: ${errorMessage}`);
-      }
-    }
-  };
-
-  const cancelSettlement = () => {
-    setShowSettlementModal(false);
-    setSelectedWinningOption(null);
-  };
-
-  // Check if current user is the poll creator (for now, any connected wallet can settle)
-  // TODO: Add creator address to Poll interface when available from backend
-  const isCreator = !!address; // Temporary: allow any connected user to settle
 
   // Check if poll has ended
   const pollHasEnded = poll && (poll.endDate || poll.end_time) && 
     new Date() > new Date(poll.endDate || poll.end_time || '');
-
-  // Check if poll needs settlement (blockchain polls only)
-  // TODO: Add settled field to Poll interface when available from backend
-  const needsSettlement = poll?.isBlockchain && pollHasEnded && isCreator;
+  
+  // Check if poll has been automatically settled
+  const isSettled = poll?.settled || false;
 
   if (!poll) {
     return null;
@@ -284,42 +253,68 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                 </motion.div>
               )}
 
-              {/* Automatic Settlement Banner */}
-              {needsSettlement && (
+              {/* Automatic Settlement Status */}
+              {pollHasEnded && poll?.isBlockchain && (
                 <motion.div
-                  className="bg-green-500/10 border border-green-500/20 rounded-xl p-6 mb-6 text-center"
+                  className={`rounded-xl p-6 mb-6 text-center ${
+                    isSettled 
+                      ? 'bg-blue-500/10 border border-blue-500/20' 
+                      : 'bg-orange-500/10 border border-orange-500/20'
+                  }`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.8 }}
                 >
-                  <div className="flex items-center justify-center space-x-2 text-green-400 mb-4">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-xl font-bold">Automatic Settlement Available</span>
-                  </div>
-                  <p className="text-green-300 mb-4">
-                    This poll has ended! The most voted option will automatically win and rewards will be distributed to voters who chose correctly.
-                  </p>
-                  <button
-                    onClick={handleSettlement}
-                    disabled={isSettling}
-                    className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2 mx-auto"
-                  >
-                    {isSettling ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                        <span>Settling...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isSettled ? (
+                    <>
+                      <div className="flex items-center justify-center space-x-2 text-blue-400 mb-4">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Auto-Settle Poll & Distribute Rewards</span>
-                      </>
-                    )}
-                  </button>
+                        <span className="text-xl font-bold">Poll Settled & Rewards Distributed! 🎉</span>
+                      </div>
+                      <p className="text-blue-300 mb-4">
+                        This poll has been automatically settled. The most voted option won and rewards have been distributed to voters who chose correctly.
+                      </p>
+                      {poll.winningOption !== undefined && (
+                        <div className="bg-blue-500/20 rounded-lg p-4">
+                          <h4 className="text-blue-400 font-medium mb-2">Winning Option:</h4>
+                          <p className="text-blue-300 font-bold">
+                            {(() => {
+                              const option = poll.options[poll.winningOption];
+                              if (typeof option === 'string') {
+                                return option;
+                              } else if (option && typeof option === 'object' && 'text' in option) {
+                                return option.text;
+                              }
+                              return 'Unknown';
+                            })()}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-center space-x-2 text-orange-400 mb-4">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                        </svg>
+                        <span className="text-xl font-bold">Poll Ended - Settlement in Progress</span>
+                      </div>
+                      <p className="text-orange-300 mb-4">
+                        This poll has ended and is being automatically settled. The most voted option will win and rewards will be distributed shortly.
+                      </p>
+                      <div className="bg-orange-500/20 rounded-lg p-4">
+                        <h4 className="text-orange-400 font-medium mb-2">What happens next:</h4>
+                        <div className="space-y-1 text-sm text-orange-300">
+                          <div>• The option with the most votes automatically wins</div>
+                          <div>• 85% of the pool goes to winning voters</div>
+                          <div>• 10% platform fee, 5% creator fee</div>
+                          <div>• No manual action needed!</div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               )}
 
@@ -467,74 +462,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
         </section>
       </div>
       
-      {/* Automatic Settlement Modal */}
-      <AnimatePresence>
-        {showSettlementModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-lg mx-4"
-            >
-              <h3 className="text-2xl font-bold text-white mb-6 text-center">
-                🎯 Automatic Settlement
-              </h3>
-              
-              <div className="mb-6 text-center">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                
-                <p className="text-secondary-300 mb-4">
-                  This poll will be automatically settled based on the most voted option!
-                </p>
-                
-                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-                  <h4 className="text-green-400 font-medium mb-2">How it works:</h4>
-                  <div className="space-y-1 text-sm text-green-300">
-                    <div>• The option with the most votes automatically wins</div>
-                    <div>• 85% of the pool goes to winning voters</div>
-                    <div>• 10% platform fee, 5% creator fee</div>
-                    <div>• No manual selection needed!</div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={cancelSettlement}
-                  disabled={isSettling}
-                  className="flex-1 px-4 py-3 bg-white/5 border border-white/10 text-secondary-300 rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSettlement}
-                  disabled={isSettling}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
-                >
-                  {isSettling ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                      <span>Settling...</span>
-                    </>
-                  ) : (
-                    <span>Auto-Settle Poll</span>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
       
       {/* Vote Confirmation Modal */}
       <AnimatePresence>
