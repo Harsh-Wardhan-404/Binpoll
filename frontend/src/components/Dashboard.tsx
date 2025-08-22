@@ -56,16 +56,36 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Initialize data
+  // Initialize data - Call API when dashboard loads
   useEffect(() => {
+    console.log('🔄 Dashboard: Initializing data...');
+    console.log('🔄 Dashboard: isAuthenticated =', isAuthenticated);
+    
     if (isAuthenticated) {
+      console.log('🔄 Dashboard: Fetching polls...');
       fetchPolls();
       loadBlockchainPolls();
+    } else {
+      console.log('🔄 Dashboard: Not authenticated, skipping poll fetch');
     }
   }, [isAuthenticated, fetchPolls]);
 
+  // Update allPolls when polls data changes
+  useEffect(() => {
+    console.log('🔄 Dashboard: polls data updated, length:', polls?.length || 0);
+    if (polls && polls.length > 0) {
+      setAllPolls(polls);
+      console.log('✅ Dashboard: Updated allPolls with', polls.length, 'polls');
+    }
+  }, [polls]);
+
   // Update filtered polls when data changes
   useEffect(() => {
+    console.log('🔄 Dashboard: Updating filtered polls...');
+    console.log('🔄 Dashboard: allPolls length:', allPolls.length);
+    console.log('🔄 Dashboard: searchQuery:', searchQuery);
+    console.log('🔄 Dashboard: selectedCategory:', selectedCategory);
+    
     let filtered = [...allPolls];
     
     if (searchQuery) {
@@ -80,6 +100,7 @@ const Dashboard: React.FC = () => {
     }
 
     setFilteredPolls(filtered);
+    console.log('✅ Dashboard: Filtered polls length:', filtered.length);
   }, [allPolls, searchQuery, selectedCategory]);
 
   const handlePollClick = (poll: Poll) => {
@@ -136,13 +157,6 @@ const Dashboard: React.FC = () => {
     window.addEventListener('pollCreated', handlePollCreated);
     return () => window.removeEventListener('pollCreated', handlePollCreated);
   }, [isAuthenticated, fetchPolls]);
-
-  // Update allPolls when polls data changes
-  useEffect(() => {
-    if (polls) {
-      setAllPolls(polls);
-    }
-  }, [polls]);
 
   // Helper function to render poll section
   const renderPollSection = (
@@ -228,6 +242,14 @@ const Dashboard: React.FC = () => {
   const hasDashboardData = dashboardPolls.recents.length > 0 || 
                           dashboardPolls.hots.length > 0 || 
                           dashboardPolls.large_bets.length > 0;
+
+  console.log('🔄 Dashboard: Rendering with data:');
+  console.log('🔄 Dashboard: hasDashboardData =', hasDashboardData);
+  console.log('🔄 Dashboard: dashboardPolls.recents.length =', dashboardPolls.recents.length);
+  console.log('🔄 Dashboard: dashboardPolls.hots.length =', dashboardPolls.hots.length);
+  console.log('🔄 Dashboard: dashboardPolls.large_bets.length =', dashboardPolls.large_bets.length);
+  console.log('🔄 Dashboard: filteredPolls.length =', filteredPolls.length);
+  console.log('🔄 Dashboard: allPolls.length =', allPolls.length);
 
   return (
     <div ref={dashboardRef} className="min-h-screen bg-secondary-900">
