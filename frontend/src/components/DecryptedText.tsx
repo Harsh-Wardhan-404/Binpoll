@@ -147,12 +147,18 @@ export default function DecryptedText({
             }
             : {}
 
+    // Filter out non-DOM props to avoid React warnings
+    const domProps = { ...props };
+    if ('revealDirection' in domProps) {
+        delete domProps.revealDirection;
+    }
+    
     return (
         <motion.span
             ref={containerRef}
             className={`inline-block whitespace-pre-wrap ${parentClassName}`}
             {...hoverProps}
-            {...props}
+            {...domProps}
         >
             <span className="sr-only">{displayText}</span>
 

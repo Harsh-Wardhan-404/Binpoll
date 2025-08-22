@@ -3,12 +3,14 @@ import { motion } from 'motion/react';
 import { gsap } from 'gsap';
 import { useAuth } from '../hooks/useAuth';
 import { useAccount } from 'wagmi';
+import { useUserProfile } from '../hooks/useUserProfile';
 import ProfileCard from './ProfileCard';
 
 const Profile: React.FC = () => {
   const profileRef = useRef<HTMLDivElement>(null);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { address } = useAccount();
+  const { profile, loading, error, refreshProfile } = useUserProfile();
 
   useEffect(() => {
     if (profileRef.current) {
@@ -28,7 +30,7 @@ const Profile: React.FC = () => {
     }
   }, []);
 
-  if (!isAuthenticated || !user) {
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-secondary-900">
         {/* Background effects */}
@@ -74,100 +76,191 @@ const Profile: React.FC = () => {
         <section className="pb-20">
           <div className="container-custom">
             <div className="max-w-4xl mx-auto">
-              <div className="flex justify-center mb-12">
-                <ProfileCard
-                  name={user.username || 'Anonymous User'}
-                  title="BinPoll User"
-                  handle={user.walletAddress ? `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` : 'user'}
-                  status="Online"
-                  contactText="Edit Profile"
-                  avatarUrl={user.avatarUrl || `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"><rect width="400" height="600" fill="#f0b90b"/><text x="200" y="320" font-family="Arial, sans-serif" font-size="120" fill="#1a1a1b" text-anchor="middle" font-weight="bold">U</text></svg>')}`}
-                  showUserInfo={true}
-                  enableTilt={true}
-                  enableMobileTilt={false}
-                  onContactClick={() => console.log('Edit profile clicked')}
-                />
-              </div>
-
-              {/* Profile Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
-                >
+              {loading ? (
+                <div className="flex justify-center mb-12">
                   <div className="text-center">
-                    <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
-                    <p className="text-2xl font-bold text-primary-400">{user.totalPollsCreated || 0}</p>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
-                >
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
-                    <p className="text-2xl font-bold text-primary-400">{user.totalVotesCast || 0}</p>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
-                >
-                  <div className="text-center">
-                    <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">Member Since</h3>
-                    <p className="text-lg font-medium text-secondary-300">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'Recently'}
-                    </p>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* Wallet Information */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
-              >
-                <h3 className="text-xl font-semibold text-white mb-4">Wallet Information</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-secondary-300">Wallet Address:</span>
-                    <span className="font-mono text-white">{address || 'Not connected'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-secondary-300">Username:</span>
-                    <span className="text-white">{user.username || 'Not set'}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-secondary-300">User ID:</span>
-                    <span className="text-white">{user.id}</span>
+                    <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-secondary-300 text-lg">Loading profile...</p>
                   </div>
                 </div>
-              </motion.div>
+              ) : error ? (
+                <div className="flex justify-center mb-12">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                    <p className="text-red-400 text-lg mb-4">Failed to load profile</p>
+                    <button
+                      onClick={refreshProfile}
+                      className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              ) : profile ? (
+                <div className="flex justify-center mb-12">
+                  <ProfileCard
+                    name={profile.username}
+                    title={profile.stats.rank}
+                    handle={profile.walletAddress ? `${profile.walletAddress.slice(0, 6)}...${profile.walletAddress.slice(-4)}` : 'user'}
+                    status="Online"
+                    contactText="Edit Profile"
+                    avatarUrl={profile.avatarUrl}
+                    showUserInfo={true}
+                    enableTilt={false}
+                    enableMobileTilt={false}
+                    onContactClick={() => console.log('Edit profile clicked')}
+                  />
+                </div>
+              ) : null}
+
+              {/* Profile Stats */}
+              {profile && (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                  >
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.totalPollsCreated}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                  >
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.totalVotesCast}</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                  >
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Total Earnings</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.stats.totalEarnings} BNB</p>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                  >
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-2">Rank</h3>
+                      <p className="text-lg font-medium text-primary-400">{profile.stats.rank}</p>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Wallet Information */}
+              {profile && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                >
+                  <h3 className="text-xl font-semibold text-white mb-4">Wallet Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-secondary-300">Wallet Address:</span>
+                      <span className="font-mono text-white">{profile.walletAddress}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-secondary-300">Username:</span>
+                      <span className="text-white">{profile.username}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-secondary-300">User ID:</span>
+                      <span className="text-white">{profile.id}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-secondary-300">Balance:</span>
+                      <span className="text-white">{profile.balance.bnb} BNB (${profile.balance.usd})</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Recent Activity */}
+              {profile && profile.recentActivity && profile.recentActivity.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                >
+                  <h3 className="text-xl font-semibold text-white mb-4">Recent Activity</h3>
+                  <div className="space-y-3">
+                    {profile.recentActivity.slice(0, 5).map((activity, index) => (
+                      <div key={activity.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+                            <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              {activity.type === 'poll_created' && (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              )}
+                              {activity.type === 'vote_cast' && (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                              )}
+                              {activity.type === 'poll_ended' && (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              )}
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{activity.title}</p>
+                            <p className="text-secondary-300 text-sm">
+                              {new Date(activity.timestamp).toLocaleDateString()} at {new Date(activity.timestamp).toLocaleTimeString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-primary-400 text-sm font-medium capitalize">
+                          {activity.type.replace('_', ' ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
             </div>
           </div>
         </section>

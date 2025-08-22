@@ -10,7 +10,7 @@ import { CTA } from './components/CTA';
 import { Footer } from './components/Footer';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
-import ProfileTest from './components/ProfileTest';
+
 
 
 function App() {
@@ -134,8 +134,7 @@ function App() {
       ) : currentPage === 'dashboard' ? (
         <Dashboard />
       ) : (
-        // <Profile />
-        <ProfileTest />
+        <Profile />
       )}
       
       {currentPage === 'home' && <Footer />}
