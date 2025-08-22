@@ -114,6 +114,40 @@ export function usePolls() {
     }
   }, []);
 
+  // Vote on a blockchain poll (save to database after blockchain transaction)
+  const voteOnBlockchainPoll = useCallback(async (pollId: string, optionIndex: number, transactionHash: string, amount?: string): Promise<any> => {
+    // Prevent multiple simultaneous calls
+    if (isLoadingRef.current) return null;
+    
+    try {
+      isLoadingRef.current = true;
+      setLoading(true);
+      setError(null);
+      
+      console.log('💾 Saving blockchain vote to database:', { pollId, optionIndex, transactionHash, amount });
+      
+      const response = await apiClient.voteOnBlockchainPoll(pollId, optionIndex, transactionHash, amount);
+      
+      if (response.success) {
+        // Refresh the polls to get updated vote counts
+        await fetchPolls();
+        console.log('✅ Blockchain vote saved to database successfully');
+        return response.data;
+      } else {
+        setError('Failed to save blockchain vote to database');
+        console.error('❌ Failed to save blockchain vote:', response);
+        return null;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to save blockchain vote');
+      console.error('❌ Error saving blockchain vote:', err);
+      return null;
+    } finally {
+      setLoading(false);
+      isLoadingRef.current = false;
+    }
+  }, [fetchPolls]);
+
   // Get a single poll by ID
   const getPoll = useCallback(async (id: string): Promise<Poll | null> => {
     try {
@@ -224,6 +258,7 @@ export function usePolls() {
     createBlockchainPoll,
     getPoll,
     voteOnPoll,
+    voteOnBlockchainPoll,
     getMyVotes,
     getPollsByCreator,
     clearError

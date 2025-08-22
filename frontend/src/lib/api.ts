@@ -310,6 +310,31 @@ class ApiClient {
     });
   }
 
+  async voteOnBlockchainPoll(pollId: string, optionIndex: number, transactionHash: string, amount?: string) {
+    return this.request<{
+      success: boolean;
+      data: {
+        vote: {
+          id: string;
+          option_index: number;
+          amount: string;
+          voter_address: string;
+          tx_hash: string;
+          created_at: string;
+        };
+        poll: {
+          id: string;
+          total_votes: number;
+          total_pool: string;
+        };
+        transactionHash: string;
+      };
+    }>(`/polls/${pollId}/vote/blockchain`, {
+      method: 'POST',
+      body: JSON.stringify({ optionIndex, transactionHash, amount }),
+    });
+  }
+
   async getMyVotes() {
     return this.request<{
       success: boolean;

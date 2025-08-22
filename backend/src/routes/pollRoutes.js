@@ -48,17 +48,29 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
     data.map(async (poll) => {
       const { data: votes } = await supabase
         .from('votes')
-        .select('option_index')
+        .select('option_index, voter_address')
         .eq('poll_id', poll.id);
 
       const optionVotes = poll.options.map((_, index) => {
         return votes ? votes.filter(vote => vote.option_index === index).length : 0;
       });
 
+      // Check if authenticated user has voted on this poll
+      let userVote = null;
+      if (req.user && votes) {
+        const userVoteRecord = votes.find(vote => 
+          vote.voter_address && vote.voter_address.toLowerCase() === req.user.walletAddress.toLowerCase()
+        );
+        if (userVoteRecord) {
+          userVote = userVoteRecord.option_index;
+        }
+      }
+
       return {
         ...poll,
         optionVotes,
-        totalVotes: votes ? votes.length : 0
+        totalVotes: votes ? votes.length : 0,
+        userVote
       };
     })
   );
@@ -429,6 +441,132 @@ router.post('/:id/vote', verifyAuth, asyncHandler(async (req, res) => {
     data: {
       vote,
       poll: updatedPoll
+    }
+  });
+}));
+
+// @desc    Vote on a blockchain poll
+// @route   POST /api/polls/:id/vote/blockchain
+// @access  Private
+router.post('/:id/vote/blockchain', verifyAuth, asyncHandler(async (req, res) => {
+  const { optionIndex, transactionHash, amount = '0.001' } = req.body;
+  const pollIdParam = req.params.id;
+
+  // Validate input
+  if (optionIndex === undefined || optionIndex < 0 || !transactionHash) {
+    return res.status(400).json({
+      success: false,
+      error: 'Valid option index and transaction hash are required'
+    });
+  }
+
+  // Find poll by UUID (we now use database UUIDs as poll IDs)
+  console.log('🔍 Looking for poll with UUID:', pollIdParam);
+  
+  const { data: poll, error: pollError } = await supabase
+    .from('polls')
+    .select('*')
+    .eq('id', pollIdParam)
+    .single();
+
+  if (pollError || !poll) {
+    return res.status(404).json({
+      success: false,
+      error: 'Poll not found'
+    });
+  }
+
+  // Check if poll is blockchain poll
+  if (!poll.is_on_chain) {
+    return res.status(400).json({
+      success: false,
+      error: 'This is not a blockchain poll'
+    });
+  }
+
+  // Check if poll is active
+  if (!poll.is_active || new Date(poll.end_time) <= new Date()) {
+    return res.status(400).json({
+      success: false,
+      error: 'Poll is not active or has ended'
+    });
+  }
+
+  // Check if option index is valid
+  if (optionIndex >= poll.options.length) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid option index'
+    });
+  }
+
+  console.log('✅ Found poll for voting:', poll.id, poll.title);
+
+  // Check if user has already voted
+  const { data: existingVote } = await supabase
+    .from('votes')
+    .select('id')
+    .eq('poll_id', poll.id)  // Use the actual database poll ID
+    .eq('voter_address', req.user.walletAddress)
+    .single();
+
+    console.log('🔍 Existing vote:', existingVote);
+
+  if (existingVote) {
+    return res.status(400).json({
+      success: false,
+      error: 'You have already voted on this poll'
+    });
+  }
+
+  // Create blockchain vote record
+  const { data: vote, error: voteError } = await supabase
+    .from('votes')
+    .insert({
+      poll_id: poll.id,  // Use the actual database poll ID
+      voter_id: req.user.id,
+      voter_address: req.user.walletAddress,
+      option_index: optionIndex,
+      amount,
+      tx_hash: transactionHash,
+      is_on_chain: true
+    })
+    .select()
+    .single();
+
+  if (voteError) {
+    console.error('Blockchain vote creation error:', voteError);
+    return res.status(400).json({
+      success: false,
+      error: voteError.message
+    });
+  }
+
+  // Update poll vote count and total pool
+  const { data: updatedPoll } = await supabase
+    .from('polls')
+    .update({
+      total_votes: poll.total_votes + 1,
+      total_pool: (parseFloat(poll.total_pool) + parseFloat(amount)).toString()
+    })
+    .eq('id', poll.id)  // Use the actual database poll ID
+    .select()
+    .single();
+
+  // Update user's vote count
+  await supabase
+    .from('users')
+    .update({
+      total_votes_cast: req.user.totalVotesCast + 1
+    })
+    .eq('id', req.user.id);
+
+  res.status(201).json({
+    success: true,
+    data: {
+      vote,
+      poll: updatedPoll,
+      transactionHash
     }
   });
 }));

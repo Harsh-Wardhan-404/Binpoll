@@ -24,7 +24,13 @@ export interface Poll {
   };
   // Blockchain specific fields
   isBlockchain?: boolean;
-  blockchainId?: bigint;
+  blockchainId?: bigint | string;
+  // Database fields
+  is_on_chain?: boolean;
+  blockchain_id?: string;
+  transaction_hash?: string;
+  // User vote information
+  userVote?: number | null; // Index of the option the user voted for
 }
 
 export interface PollOption {
