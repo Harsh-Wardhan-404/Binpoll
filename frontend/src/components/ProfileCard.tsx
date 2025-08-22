@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import "./ProfileCard.css";
+import { useUserProfile } from "../hooks/useUserProfile";
+import { useAuth } from "../hooks/useAuth";
 
 interface ProfileCardProps {
   avatarUrl: string;
@@ -55,9 +57,9 @@ const easeInOutCubic = (x: number): number =>
   x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 
 const ProfileCardComponent: React.FC<ProfileCardProps> = ({
-  avatarUrl = "<Placeholder for avatar URL>",
-  iconUrl = "<Placeholder for icon URL>",
-  grainUrl = "<Placeholder for grain URL>",
+  avatarUrl = "",
+  iconUrl = "",
+  grainUrl = "",
   behindGradient,
   innerGradient,
   showBehindGradient = true,
@@ -74,6 +76,41 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
   showUserInfo = true,
   onContactClick,
 }) => {
+  // Get real user profile data
+  const { profile, loading: profileLoading } = useUserProfile();
+  const { isAuthenticated } = useAuth();
+
+  // Use real data if available, otherwise use props
+  const displayName = profile?.username || name;
+  const displayTitle = profile?.stats?.rank || title;
+  const displayHandle = profile?.walletAddress ? 
+    `${profile.walletAddress.slice(0, 6)}...${profile.walletAddress.slice(-4)}` : 
+    handle;
+  const displayStatus = isAuthenticated ? "Online" : "Offline";
+  
+  // Create a fallback avatar if no valid avatar URL is provided
+  const fallbackAvatar = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600"><rect width="400" height="600" fill="#f0b90b"/><text x="200" y="320" font-family="Arial, sans-serif" font-size="120" fill="#1a1a1b" text-anchor="middle" font-weight="bold">U</text></svg>')}`;
+  
+  const displayAvatar = profile?.avatarUrl || avatarUrl || fallbackAvatar;
+  const displayMiniAvatar = profile?.avatarUrl || miniAvatarUrl || avatarUrl || fallbackAvatar;
+
+  // Show loading state if profile is being fetched
+  if (profileLoading && isAuthenticated) {
+    return (
+      <div className={`pc-card-wrapper ${className}`.trim()}>
+        <div className="pc-card">
+          <div className="pc-inside">
+            <div className="pc-content">
+              <div className="pc-details">
+                <h3>Loading...</h3>
+                <p>Fetching profile data</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const wrapRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -318,12 +355,14 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           <div className="pc-content pc-avatar-content">
             <img
               className="avatar"
-              src={avatarUrl}
-              alt={`${name || "User"} avatar`}
+              src={displayAvatar}
+              alt={`${displayName || "User"} avatar`}
               loading="lazy"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
+                // If the image fails to load, hide it and don't retry
                 target.style.display = "none";
+                console.warn("Avatar image failed to load:", displayAvatar);
               }}
             />
             {showUserInfo && (
@@ -331,19 +370,26 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                 <div className="pc-user-details">
                   <div className="pc-mini-avatar">
                     <img
-                      src={miniAvatarUrl || avatarUrl}
-                      alt={`${name || "User"} mini avatar`}
+                      src={displayMiniAvatar}
+                      alt={`${displayName || "User"} mini avatar`}
                       loading="lazy"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.style.opacity = "0.5";
-                        target.src = avatarUrl;
+                        // If the mini avatar fails to load, hide it and don't retry
+                        target.style.display = "none";
+                        console.warn("Mini avatar image failed to load:", displayMiniAvatar);
                       }}
                     />
                   </div>
                   <div className="pc-user-text">
-                    <div className="pc-handle">@{handle}</div>
-                    <div className="pc-status">{status}</div>
+                    <div className="pc-handle">@{displayHandle}</div>
+                    <div className="pc-status">{displayStatus}</div>
+                    {profile?.balance && (
+                      <div className="pc-balance">
+                        <div className="pc-balance-bnb">{profile.balance.bnb} BNB</div>
+                        <div className="pc-balance-usd">${profile.balance.usd}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <button
@@ -351,7 +397,7 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   onClick={handleContactClick}
                   style={{ pointerEvents: "auto" }}
                   type="button"
-                  aria-label={`Contact ${name || "user"}`}
+                  aria-label={`Contact ${displayName || "user"}`}
                 >
                   {contactText}
                 </button>
@@ -360,8 +406,24 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
           </div>
           <div className="pc-content">
             <div className="pc-details">
-              <h3>{name}</h3>
-              <p>{title}</p>
+              <h3>{displayName}</h3>
+              <p>{displayTitle}</p>
+              {profile?.stats && (
+                <div className="pc-stats">
+                  <div className="pc-stat-item">
+                    <span className="pc-stat-label">Polls</span>
+                    <span className="pc-stat-value">{profile.stats.pollsCreated}</span>
+                  </div>
+                  <div className="pc-stat-item">
+                    <span className="pc-stat-label">Votes</span>
+                    <span className="pc-stat-value">{profile.stats.votesCast}</span>
+                  </div>
+                  <div className="pc-stat-item">
+                    <span className="pc-stat-label">Earnings</span>
+                    <span className="pc-stat-value">{profile.stats.totalEarnings} BNB</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

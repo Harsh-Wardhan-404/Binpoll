@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { ethers } = require('ethers');
 const config = require('../config/environment');
-const { supabase } = require('../config/supabase');
+const { supabase } = require('../config/database');
 
 // Generate avatar SVG for wallet address
 const generateAvatarUrl = (address) => {
@@ -105,9 +105,11 @@ const authenticateWallet = async (req, res) => {
 
 // Middleware to verify JWT token
 const verifyAuth = async (req, res, next) => {
+
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid authorization header found');
       return res.status(401).json({ 
         success: false, 
         error: 'No token provided' 
@@ -138,6 +140,12 @@ const verifyAuth = async (req, res, next) => {
       username: user.username,
       avatarUrl: user.avatar_url
     };
+
+    console.log('=== User authenticated ===');
+    console.log('User ID:', user.id);
+    console.log('Wallet Address:', user.wallet_address);
+    console.log('Username:', user.username);
+    console.log('Avatar URL:', user.avatar_url);
 
     next();
   } catch (error) {
