@@ -2,8 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { gsap } from 'gsap';
 import { useAccount, useChainId } from 'wagmi';
-import PollCard from './PollCard';
-import { usePolls } from '../hooks/usePolls';
 import { useSimplePoll } from '../hooks/useSimplePoll';
 import type { Poll } from '../types';
 
@@ -23,7 +21,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   const [pendingVote, setPendingVote] = useState<number | null>(null);
   
   // Get blockchain voting info if it's a blockchain poll
-  const { entryFee, isVoting: isBlockchainVoting, hasUserVoted } = useSimplePoll(chainId);
+  const { entryFee, isVoting: isBlockchainVoting, voteTxHash } = useSimplePoll(chainId);
   
   // Check if user has voted on this poll
   const userHasVoted = poll?.userVote !== null && poll?.userVote !== undefined;
@@ -70,6 +68,8 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   };
   
   const handleVote = async (optionIndex: number) => {
+    if (!poll) return;
+    
     setIsVoting(true);
     try {
       await onVote(poll.id, optionIndex);
@@ -78,7 +78,8 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
       setPendingVote(null);
     } catch (error) {
       console.error('Failed to vote:', error);
-      alert(`Failed to vote: ${error.message || error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to vote: ${errorMessage}`);
     } finally {
       setIsVoting(false);
     }
@@ -243,7 +244,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                   <motion.div
                     key={option.id}
                     className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all duration-300 ${
-                      userHasVoted 
+                      userHasVoted || isVoting || isBlockchainVoting
                         ? 'opacity-60 cursor-not-allowed' 
                         : 'hover:bg-white/10 cursor-pointer'
                     } ${
@@ -252,7 +253,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
-                    onClick={() => !userHasVoted && handleVoteClick(index)}
+                    onClick={() => !userHasVoted && !isVoting && !isBlockchainVoting && handleVoteClick(index)}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-white">{option.text}</h3>
@@ -304,6 +305,56 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                   </motion.div>
                 ))}
               </div>
+              
+              {/* Blockchain Transaction Loading Overlay */}
+              {poll.isBlockchain && (isVoting || isBlockchainVoting) && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50"
+                >
+                  <div className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md mx-4 text-center">
+                    {/* Spinning loader */}
+                    <div className="w-16 h-16 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin mx-auto mb-6"></div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      Processing Your Vote
+                    </h3>
+                    
+                    <div className="space-y-3 text-secondary-300">
+                      <div className="flex items-center justify-center space-x-2">
+                        <div className="w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
+                        <span>Confirming transaction in MetaMask...</span>
+                      </div>
+                      
+                      {voteTxHash && (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Transaction submitted to blockchain</span>
+                        </div>
+                      )}
+                      
+                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 mt-4">
+                        <div className="text-blue-400 text-sm">
+                          <div className="flex items-center justify-center space-x-2 mb-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            <span>Paying {entryFee} BNB</span>
+                          </div>
+                          <p className="text-xs text-blue-300">
+                            Please wait while your transaction is processed on the blockchain...
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-secondary-400 mt-6">
+                      ⚠️ Do not close this window or refresh the page
+                    </p>
+                  </div>
+                </motion.div>
+              )}
 
               {/* Creator Info */}
               <motion.div
@@ -372,16 +423,24 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
               <div className="flex space-x-3">
                 <button
                   onClick={cancelVote}
-                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-secondary-300 rounded-lg hover:bg-white/10 transition-colors"
+                  disabled={isVoting || isBlockchainVoting}
+                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-secondary-300 rounded-lg hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmVote}
                   disabled={isVoting || isBlockchainVoting}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
                 >
-                  {isVoting || isBlockchainVoting ? 'Processing...' : `Pay ${entryFee} BNB & Vote`}
+                  {(isVoting || isBlockchainVoting) ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-secondary-900/20 border-t-secondary-900 rounded-full animate-spin"></div>
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <span>Pay {entryFee} BNB & Vote</span>
+                  )}
                 </button>
               </div>
             </motion.div>

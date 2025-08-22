@@ -193,7 +193,7 @@ router.post('/', verifyAuth, asyncHandler(async (req, res) => {
       creator_address: req.user.walletAddress,
       options: options.map(opt => opt.trim()),
       category,
-      duration_hours: durationMinutes / 60, // Convert minutes to hours for database storage
+      duration_hours: Math.max(1, Math.round(durationMinutes / 60)), // Convert minutes to hours, minimum 1 hour for DB
       end_time: endTime.toISOString(),
       is_active: true,
       total_votes: 0,
@@ -250,7 +250,7 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
   } = req.body;
 
   // Validate input
-  if (!title || !description || !options || !durationMinutes || !blockchainId || !transactionHash || !creatorAddress) {
+  if (!title || !description || !options || durationMinutes === undefined || durationMinutes === null || !blockchainId || !transactionHash || !creatorAddress) {
     return res.status(400).json({
       success: false,
       error: 'Missing required fields: title, description, options, durationMinutes, blockchainId, transactionHash, creatorAddress'
@@ -282,7 +282,7 @@ router.post('/blockchain', verifyAuth, asyncHandler(async (req, res) => {
       creator_address: req.user.walletAddress,
       options: options.map(opt => opt.trim()),
       category,
-      duration_hours: durationMinutes / 60, // Convert minutes to hours for database storage
+      duration_hours: Math.max(1, Math.round(durationMinutes / 60)), // Convert minutes to hours, minimum 1 hour for DB
       end_time: endTime.toISOString(),
       is_active: true,
       total_votes: 0,

@@ -44,7 +44,7 @@ export interface CreatePollData {
   title: string;
   description: string;
   options: string[];
-  durationHours: number;
+  durationMinutes: number;
   category?: string;
 }
 

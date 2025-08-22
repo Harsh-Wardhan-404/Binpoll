@@ -65,6 +65,14 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
   // Save blockchain poll to database when transaction is confirmed
   useEffect(() => {
     if (createPollTxHash && address && !processedTxHashes.current.has(createPollTxHash)) {
+      // Check if we have valid form data before processing
+      const hasValidData = title.trim() && description.trim() && options.some(opt => opt.trim() !== '');
+      
+      if (!hasValidData) {
+        console.log('⚠️ Skipping blockchain poll save - form data is empty (likely after reset)');
+        return;
+      }
+      
       // Mark this transaction as processed to prevent duplicate calls
       processedTxHashes.current.add(createPollTxHash);
       
