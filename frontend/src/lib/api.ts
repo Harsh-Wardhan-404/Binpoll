@@ -168,6 +168,104 @@ class ApiClient {
     }
     
     const query = searchParams.toString();
+    
+    // If no category/search filter, return dashboard structure
+    if ((!params?.category || params.category === 'All') && !params?.search) {
+      return this.request<{
+        success: boolean;
+        data: {
+          recents: Array<{
+            id: string;
+            title: string;
+            description: string;
+            options: string[];
+            category: string;
+            end_time: string;
+            is_active: boolean;
+            total_votes: number;
+            optionVotes: number[];
+            totalVotes: number;
+            total_pool: number;
+            current_voter_count: number;
+            is_credibility_gated: boolean;
+            voting_weight_multiplier: number;
+            creator_credibility_bonus: number;
+            min_credibility_required: number;
+            max_voters: number | null;
+            is_on_chain: boolean;
+            blockchain_id: string | null;
+            transaction_hash: string | null;
+            userVote: number | null;
+            users: {
+              id: string;
+              username: string;
+              wallet_address: string;
+              avatar_url: string;
+            };
+          }>;
+          hots: Array<{
+            id: string;
+            title: string;
+            description: string;
+            options: string[];
+            category: string;
+            end_time: string;
+            is_active: boolean;
+            total_votes: number;
+            optionVotes: number[];
+            totalVotes: number;
+            total_pool: number;
+            current_voter_count: number;
+            is_credibility_gated: boolean;
+            voting_weight_multiplier: number;
+            creator_credibility_bonus: number;
+            min_credibility_required: number;
+            max_voters: number | null;
+            is_on_chain: boolean;
+            blockchain_id: string | null;
+            transaction_hash: string | null;
+            userVote: number | null;
+            users: {
+              id: string;
+              username: string;
+              wallet_address: string;
+              avatar_url: string;
+            };
+          }>;
+          large_bets: Array<{
+            id: string;
+            title: string;
+            description: string;
+            options: string[];
+            category: string;
+            end_time: string;
+            is_active: boolean;
+            total_votes: number;
+            optionVotes: number[];
+            totalVotes: number;
+            total_pool: number;
+            current_voter_count: number;
+            is_credibility_gated: boolean;
+            voting_weight_multiplier: number;
+            creator_credibility_bonus: number;
+            min_credibility_required: number;
+            max_voters: number | null;
+            is_on_chain: boolean;
+            blockchain_id: string | null;
+            transaction_hash: string | null;
+            userVote: number | null;
+            users: {
+              id: string;
+              username: string;
+              wallet_address: string;
+              avatar_url: string;
+            };
+          }>;
+        };
+      }>(`/polls${query ? `?${query}` : ''}`);
+    }
+    
+    // For filtered results, return the original structure
     return this.request<{
       success: boolean;
       count: number;
@@ -182,6 +280,17 @@ class ApiClient {
         total_votes: number;
         optionVotes: number[];
         totalVotes: number;
+        total_pool: number;
+        current_voter_count: number;
+        is_credibility_gated: boolean;
+        voting_weight_multiplier: number;
+        creator_credibility_bonus: number;
+        min_credibility_required: number;
+        max_voters: number | null;
+        is_on_chain: boolean;
+        blockchain_id: string | null;
+        transaction_hash: string | null;
+        userVote: number | null;
         users: {
           id: string;
           username: string;

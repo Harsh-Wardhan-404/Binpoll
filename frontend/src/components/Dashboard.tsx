@@ -9,10 +9,11 @@ import SearchBar from './SearchBar';
 import ScrollVelocity from './ScrollVelocity';
 import CreatePollModal from './CreatePollModal';
 import WalletConnectAuth from './WalletConnectAuth';
+import Galaxy from './Galaxy';
 import { usePolls } from '../hooks/usePolls';
 import { useAuth } from '../hooks/useAuth';
 import { useSimplePoll } from '../hooks/useSimplePoll';
-import type { Poll, PollOption } from '../types';
+import type { Poll } from '../types';
 
 const Dashboard: React.FC = () => {
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
@@ -33,7 +34,7 @@ const Dashboard: React.FC = () => {
   const isCorrectNetwork = chainId === bscTestnet.id || chainId === hardhat.id;
 
   // API hooks
-  const { polls, loading: isLoading, fetchPolls, voteOnPoll, voteOnBlockchainPoll } = usePolls();
+  const { polls, dashboardPolls, loading: isLoading, fetchPolls, voteOnPoll, voteOnBlockchainPoll } = usePolls();
 
   // Blockchain hooks
   const { getAllPolls, voteOnPoll: blockchainVote, entryFee, voteTxHash } = useSimplePoll(chainId);
@@ -70,7 +71,7 @@ const Dashboard: React.FC = () => {
           id: poll.id, // Use the actual UUID from database
           title: poll.title,
           description: poll.description,
-          options: poll.options.map((option: any, index: number) => ({
+          options: poll.options.map((option: string | { text: string }, index: number) => ({
             text: typeof option === 'string' ? option : option.text,
             votes: poll.optionVotes?.[index] || 0,
             percentage: poll.totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / poll.totalVotes) * 100 : 0
@@ -109,12 +110,16 @@ const Dashboard: React.FC = () => {
     }
   }, [isAuthenticated]); // Only fetch when authentication status changes
 
-  // Load blockchain polls when wallet/network changes
+  // Only load blockchain polls when wallet/network changes, not on every polls change
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && isConnected && isCorrectNetwork) {
       loadBlockchainPolls();
+    } else if (isAuthenticated) {
+      setAllPolls(polls); // fallback to API polls only
     }
-  }, [polls, isConnected, isCorrectNetwork, chainId, isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConnected, isCorrectNetwork, chainId, isAuthenticated]);
+  // Remove 'polls' from dependency array to avoid repeated calls
 
   // Watch for successful blockchain votes
   useEffect(() => {
@@ -256,9 +261,23 @@ const Dashboard: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-secondary-900">
-        {/* Background effects */}
-        <div className="fixed inset-0 bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900" />
-        <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(240,185,11,0.1),transparent_50%)]" />
+        {/* Galaxy Background */}
+        {/* <div className="fixed inset-0 z-0">
+          <Galaxy 
+            mouseRepulsion={false}
+            mouseInteraction={false}
+            density={0.05}
+            glowIntensity={0.4}
+            saturation={0.8}
+            hueShift={105}
+            twinkleIntensity={0.4}
+            rotationSpeed={0.05}
+            transparent={true}
+          />
+        </div> */}
+        
+        {/* Background overlay for better text readability */}
+        <div className="fixed inset-0 bg-gradient-to-br from-secondary-900/80 via-secondary-800/60 to-secondary-900/80 z-0" />
         
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="text-center max-w-2xl mx-auto px-6">
@@ -328,10 +347,30 @@ const Dashboard: React.FC = () => {
 
   if (isLoading || blockchainPollsLoading) {
     return (
-      <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-secondary-300 text-lg">Loading polls...</p>
+      <div className="min-h-screen bg-secondary-900">
+        {/* Galaxy Background */}
+        {/* <div className="fixed inset-0 z-0">
+          <Galaxy 
+            mouseRepulsion={true}
+            mouseInteraction={true}
+            density={0.6}
+            glowIntensity={0.5}
+            saturation={0.8}
+            hueShift={45}
+            twinkleIntensity={0.4}
+            rotationSpeed={0.05}
+            transparent={true}
+          />
+        </div> */}
+        
+        {/* Background overlay for better text readability */}
+        <div className="fixed inset-0 bg-gradient-to-br from-secondary-900/80 via-secondary-800/60 to-secondary-900/80 z-0" />
+        
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-secondary-300 text-lg">Loading polls...</p>
+          </div>
         </div>
       </div>
     );
@@ -339,9 +378,15 @@ const Dashboard: React.FC = () => {
 
   return (
     <div ref={dashboardRef} className="min-h-screen bg-secondary-900">
-      {/* Background effects */}
-      <div className="fixed inset-0 bg-gradient-to-br from-secondary-900 via-secondary-800 to-secondary-900" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(240,185,11,0.1),transparent_50%)]" />
+      {/* Galaxy Background */}
+      <div className="fixed inset-0 z-0">
+        <Galaxy 
+
+        />
+      </div>
+      
+      {/* Background overlay for better text readability */}
+      <div className="fixed inset-0 bg-gradient-to-br from-secondary-900/80 via-secondary-800/60 to-secondary-900/80 z-0" />
       
       <div className="relative z-10">
         {/* Header Section */}
@@ -397,53 +442,169 @@ const Dashboard: React.FC = () => {
         {/* Main Content */}
         <section className="pb-20">
           <div className="container-custom">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {filteredPolls.length} Poll{filteredPolls.length !== 1 ? 's' : ''} Found
-              </h2>
-              <p className="text-secondary-400">
-                {searchQuery && `Searching for: "${searchQuery}"`}
-                {selectedCategory !== 'All' && ` • Category: ${selectedCategory}`}
-              </p>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {filteredPolls.length > 0 ? (
-                <motion.div
-                  key={`${searchQuery}-${selectedCategory}`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
-                >
-                  {filteredPolls.map((poll, index) => (
-                    <PollCardSmall
-                      key={poll.id}
-                      poll={poll}
-                      onClick={() => handlePollClick(poll)}
-                      index={index}
-                    />
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="text-center py-20"
-                >
-                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">No polls found</h3>
+            {/* Show filtered results when searching or filtering */}
+            {(searchQuery || selectedCategory !== 'All') ? (
+              <>
+                <div className="mb-8">
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {filteredPolls.length} Poll{filteredPolls.length !== 1 ? 's' : ''} Found
+                  </h2>
                   <p className="text-secondary-400">
-                    Try adjusting your search or filter criteria
+                    {searchQuery && `Searching for: "${searchQuery}"`}
+                    {selectedCategory !== 'All' && ` • Category: ${selectedCategory}`}
                   </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {filteredPolls.length > 0 ? (
+                    <motion.div
+                      key={`${searchQuery}-${selectedCategory}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                    >
+                      {filteredPolls.map((poll, index) => (
+                        <PollCardSmall
+                          key={poll.id}
+                          poll={poll}
+                          onClick={() => handlePollClick(poll)}
+                          index={index}
+                        />
+                      ))}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center py-20"
+                    >
+                      <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                        <svg className="w-12 h-12 text-secondary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.08-2.33" />
+                        </svg>
+                      </div>
+                      <h3 className="text-xl font-semibold text-white mb-2">No polls found</h3>
+                      <p className="text-secondary-400">
+                        Try adjusting your search or filter criteria
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            ) : (
+              /* Show dashboard sections when no filters applied */
+              <div className="space-y-16">
+                {/* Recent Polls Section */}
+                <div>
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-white mb-2">Recent Polls</h2>
+                    <p className="text-secondary-400">Latest polls from the community</p>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    {dashboardPolls.recents.length > 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                      >
+                        {dashboardPolls.recents.map((poll, index) => (
+                          <PollCardSmall
+                            key={poll.id}
+                            poll={poll}
+                            onClick={() => handlePollClick(poll)}
+                            index={index}
+                          />
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center py-12"
+                      >
+                        <p className="text-secondary-400">No recent polls available</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Hot Polls Section */}
+                <div>
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-white mb-2">🔥 Hot Polls</h2>
+                    <p className="text-secondary-400">Most voted polls trending now</p>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    {dashboardPolls.hots.length > 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                      >
+                        {dashboardPolls.hots.map((poll, index) => (
+                          <PollCardSmall
+                            key={poll.id}
+                            poll={poll}
+                            onClick={() => handlePollClick(poll)}
+                            index={index}
+                          />
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center py-12"
+                      >
+                        <p className="text-secondary-400">No hot polls available</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Large Bets Section */}
+                <div>
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-bold text-white mb-2">💰 Large Bets</h2>
+                    <p className="text-secondary-400">High-stakes polls with big rewards</p>
+                  </div>
+                  <AnimatePresence mode="wait">
+                    {dashboardPolls.large_bets.length > 0 ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                      >
+                        {dashboardPolls.large_bets.map((poll, index) => (
+                          <PollCardSmall
+                            key={poll.id}
+                            poll={poll}
+                            onClick={() => handlePollClick(poll)}
+                            index={index}
+                          />
+                        ))}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-center py-12"
+                      >
+                        <p className="text-secondary-400">No large bet polls available</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            )}
           </div>
         </section>
       </div>

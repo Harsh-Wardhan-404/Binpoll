@@ -10,11 +10,11 @@ interface PollCardSmallProps {
 
 const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) => {
   const totalVotes = poll.totalVotes || 0;
-  const options = poll.isBlockchain 
+  const options = (poll.isBlockchain || poll.is_on_chain)
     ? poll.options.map((option, index) => ({
-        text: option.text,
-        votes: option.votes,
-        percentage: option.percentage
+        text: typeof option === 'string' ? option : option.text,
+        votes: poll.optionVotes?.[index] || 0,
+        percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
       }))
     : poll.options.map((option, index) => ({
         text: typeof option === 'string' ? option : option.text,
@@ -56,7 +56,7 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
           <span className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-xs font-medium">
             {poll.category}
           </span>
-          {poll.isBlockchain && (
+          {(poll.isBlockchain || poll.is_on_chain) && (
             <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
               Blockchain
             </span>
@@ -76,11 +76,23 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
         </div>
         <div className="text-center">
           <div className="text-lg font-bold text-primary-400">
-            {poll.isActive ? 'Active' : 'Closed'}
+            {(poll.isActive || poll.is_active) ? 'Active' : 'Closed'}
           </div>
           <div className="text-xs text-secondary-300">Status</div>
         </div>
       </div>
+
+      {/* Pool Amount for Blockchain Polls */}
+      {poll.is_on_chain && poll.total_pool && (
+        <div className="mb-4 p-3 bg-gradient-to-r from-primary-500/10 to-primary-600/10 rounded-xl border border-primary-500/20">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-primary-400">Total Pool</span>
+            <span className="text-lg font-bold text-primary-400">
+              {poll.total_pool} BNB
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Top Option Preview */}
       <div className="bg-white/5 rounded-xl p-4 mb-4">
@@ -108,11 +120,11 @@ const PollCardSmall: React.FC<PollCardSmallProps> = ({ poll, onClick, index }) =
         <div className="flex items-center space-x-2">
           <div className="w-6 h-6 bg-primary-500/20 rounded-full flex items-center justify-center">
             <span className="text-primary-400 text-xs font-semibold">
-              {poll.creator?.name?.charAt(0) || 'U'}
+              {poll.users?.username?.charAt(0) || poll.creator?.name?.charAt(0) || 'U'}
             </span>
           </div>
           <span className="text-xs text-secondary-300">
-            {poll.creator?.name || 'Unknown'}
+            {poll.users?.username || poll.creator?.name || 'Unknown'}
           </span>
         </div>
         
