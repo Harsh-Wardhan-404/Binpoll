@@ -47,6 +47,111 @@ export interface Poll {
   max_voters?: number | null;
 }
 
+// Detailed poll data from API
+export interface PollDetail {
+  id: string;
+  title: string;
+  description: string;
+  creator_id: string;
+  creator_address: string;
+  options: Array<{
+    optionIndex: number;
+    optionText: string;
+    votes: Array<{
+      id: string;
+      poll_id: string;
+      voter_id: string;
+      voter_address: string;
+      option_index: number;
+      amount: number;
+      tx_hash: string | null;
+      created_at: string;
+      is_on_chain: boolean;
+      voter_credibility_at_time: number;
+      vote_weight: number;
+      credibility_earned: number;
+      is_correct_prediction: boolean | null;
+      users: {
+        id: string;
+        username: string;
+        avatar_url: string;
+        wallet_address: string;
+        reputation_level: string;
+        credibility_score: number;
+      };
+    }>;
+  }>;
+  category: string;
+  duration_hours: number;
+  end_time: string;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  total_votes: number;
+  total_pool: number;
+  contract_poll_id: number | null;
+  is_on_chain: boolean;
+  blockchain_id: string | null;
+  transaction_hash: string | null;
+  min_credibility_required: number;
+  max_voters: number | null;
+  current_voter_count: number;
+  is_credibility_gated: boolean;
+  voting_weight_multiplier: number;
+  creator_credibility_bonus: number;
+  settled: boolean;
+  winning_option: number | null;
+  users: {
+    id: string;
+    username: string;
+    avatar_url: string;
+    wallet_address: string;
+    reputation_level: string;
+    credibility_score: number;
+  };
+  creator: {
+    id: string;
+    username: string;
+    avatar_url: string;
+    wallet_address: string;
+    reputation_level: string;
+    credibility_score: number;
+  };
+  votes: Array<{
+    id: string;
+    poll_id: string;
+    voter_id: string;
+    voter_address: string;
+    option_index: number;
+    amount: number;
+    tx_hash: string | null;
+    created_at: string;
+    is_on_chain: boolean;
+    voter_credibility_at_time: number;
+    vote_weight: number;
+    credibility_earned: number;
+    is_correct_prediction: boolean | null;
+    users: {
+      id: string;
+      username: string;
+      avatar_url: string;
+      wallet_address: string;
+      reputation_level: string;
+      credibility_score: number;
+    };
+  }>;
+  pollResult: {
+    id: string;
+    winning_option_index: number;
+    total_participants: number;
+    total_votes_cast: number;
+    average_credibility: number;
+    result_announced_at: string;
+  } | null;
+  userVote: number | null;
+  isActive: boolean;
+}
+
 export interface PollOption {
   id?: string;
   text: string;

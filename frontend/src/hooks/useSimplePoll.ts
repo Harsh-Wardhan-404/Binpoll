@@ -2,6 +2,7 @@ import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 
 import { parseEther, formatEther, type Address } from 'viem';
 import { readContract } from '@wagmi/core';
 import { config as wagmiConfig } from '../wagmi';
+import { useMemo, useEffect } from 'react';
 
 // SimplePoll contract ABI
 const SIMPLE_POLL_ABI = [
@@ -244,10 +245,16 @@ export interface PollRewardBreakdown {
 
 export const useSimplePoll = (chainId?: number) => {
   // BSC Testnet chain ID is 97, Hardhat is 31337
-  const contractAddress = chainId === 31337 ? CONTRACT_ADDRESSES.hardhat : CONTRACT_ADDRESSES.bscTestnet;
+  const contractAddress = useMemo(() => 
+    chainId === 31337 ? CONTRACT_ADDRESSES.hardhat : CONTRACT_ADDRESSES.bscTestnet,
+    [chainId]
+  );
   
-  console.log('🌐 useSimplePoll chainId:', chainId);
-  console.log('📍 Selected contract address:', contractAddress);
+  // Only log once when chainId changes
+  useEffect(() => {
+    console.log('🌐 useSimplePoll chainId:', chainId);
+    console.log('📍 Selected contract address:', contractAddress);
+  }, [chainId, contractAddress]);
 
   // Read functions
   const { data: entryFee } = useReadContract({
@@ -344,6 +351,12 @@ export const useSimplePoll = (chainId?: number) => {
       functionName: 'vote',
       args: [BigInt(pollId), BigInt(optionId)],
       value: entryFee,
+    });
+
+    console.log('🔄 Vote on poll:', {
+      pollId,
+      optionId,
+      entryFee,
     });
   };
 
@@ -456,13 +469,17 @@ export const useSimplePoll = (chainId?: number) => {
     return polls;
   };
 
-  // Debug logging for transaction states
-  console.log('🔄 Transaction states:', {
-    isCreatingPoll,
-    isCreatingPollConfirming,
-    createPollTxHash,
-    createPollError: createPollError?.message,
-  });
+  // Debug logging for transaction states (only when they change)
+  useEffect(() => {
+    if (isCreatingPoll || isCreatingPollConfirming || createPollTxHash || createPollError) {
+      console.log('🔄 Transaction states:', {
+        isCreatingPoll,
+        isCreatingPollConfirming,
+        createPollTxHash,
+        createPollError: createPollError?.message,
+      });
+    }
+  }, [isCreatingPoll, isCreatingPollConfirming, createPollTxHash, createPollError]);
 
   return {
     // Contract data

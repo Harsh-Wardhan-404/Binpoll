@@ -3,15 +3,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import { gsap } from 'gsap';
 import { useAccount, useChainId } from 'wagmi';
 import { useSimplePoll } from '../hooks/useSimplePoll';
-import type { Poll } from '../types';
+import { apiClient } from '../lib/api';
+import type { PollDetail as PollDetailType } from '../types';
 
 interface PollDetailProps {
-  poll: Poll | null;
+  pollId: string;
   onBack: () => void;
-  onVote: (pollId: string, optionIndex: number) => Promise<void>;
+  onVote: (poll: PollDetailType, optionIndex: number) => Promise<void>;
 }
 
-const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
+const PollDetail: React.FC<PollDetailProps> = ({ pollId, onBack, onVote }) => {
+  const [poll, setPoll] = useState<PollDetailType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const { address } = useAccount();
   const chainId = useChainId();
@@ -20,23 +24,38 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
   const [pendingVote, setPendingVote] = useState<number | null>(null);
 
-  
   // Get blockchain voting info if it's a blockchain poll
   const { 
     entryFee, 
     isVoting: isBlockchainVoting, 
     voteTxHash
   } = useSimplePoll(chainId);
-  
-  // Check if user has voted on this poll
-  const userHasVoted = poll?.userVote !== null && poll?.userVote !== undefined;
-  
-  console.log('🗿 User vote status for poll:', poll?.id);
-  console.log('🗿 Poll userVote field:', poll?.userVote);
-  console.log('🗿 User has voted:', userHasVoted);
 
+  // Fetch poll data
   useEffect(() => {
-    if (detailRef.current) {
+    const fetchPoll = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.getPoll(pollId);
+        if (response.success) {
+          setPoll(response.data);
+        } else {
+          setError('Failed to fetch poll data');
+        }
+      } catch (err) {
+        console.error('Error fetching poll:', err);
+        setError('Failed to load poll details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPoll();
+  }, [pollId]);
+
+  // Animation effect
+  useEffect(() => {
+    if (detailRef.current && poll) {
       gsap.fromTo(
         detailRef.current,
         {
@@ -53,8 +72,70 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
     }
   }, [poll]);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary-500/20 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-secondary-300">Loading poll details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !poll) {
+    return (
+      <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-400 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2">Error Loading Poll</h2>
+          <p className="text-secondary-300 mb-4">{error || 'Poll not found'}</p>
+          <button
+            onClick={onBack}
+            className="px-6 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has voted on this poll
+  const userHasVoted = poll?.userVote !== null && poll?.userVote !== undefined;
+
+  // Check if poll has ended
+  const pollHasEnded = poll && poll.end_time && 
+    new Date() > new Date(poll.end_time);
+
+  const isSettled = poll?.settled || false;
+
+  // Process options from API response
+  const options = Array.isArray(poll.options)
+    ? poll.options.map((option) => {
+        const voteCount = option.votes?.length || 0;
+        const percentage = poll.total_votes > 0 ? (voteCount / poll.total_votes) * 100 : 0;
+        return {
+          id: `${poll.id}-${option.optionIndex}`,
+          text: option.optionText,
+          votes: voteCount,
+          percentage: percentage
+        };
+      })
+    : [];
+
+  const totalVotes = poll.total_votes || 0;
+
   const handleVoteClick = (optionIndex: number) => {
-    if (!poll || !address || isVoting || isBlockchainVoting) return;
+    if (!poll || !address || isVoting || isBlockchainVoting) {
+      return;
+    }
     
     // Check if user has already voted
     if (userHasVoted) {
@@ -62,7 +143,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
       return;
     }
     
-    if (poll.isBlockchain) {
+    if (poll.is_on_chain) {
       // Show confirmation modal for blockchain polls
       setPendingVote(optionIndex);
       setShowVoteConfirmation(true);
@@ -73,11 +154,13 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   };
   
   const handleVote = async (optionIndex: number) => {
-    if (!poll) return;
+    if (!poll) {
+      return;
+    }
     
     setIsVoting(true);
     try {
-      await onVote(poll.id, optionIndex);
+      await onVote(poll, optionIndex);
       setSelectedOption(optionIndex);
       setShowVoteConfirmation(false);
       setPendingVote(null);
@@ -100,34 +183,6 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
     setShowVoteConfirmation(false);
     setPendingVote(null);
   };
-
-
-
-  // Check if poll has ended
-  const pollHasEnded = poll && (poll.endDate || poll.end_time) && 
-    new Date() > new Date(poll.endDate || poll.end_time || '');
-  
-  // Check if poll has been automatically settled
-  const isSettled = poll?.settled || false;
-
-  if (!poll) {
-    return null;
-  }
-
-  const totalVotes = poll.totalVotes || 0;
-  const options = poll.isBlockchain 
-    ? poll.options.map((option, index) => ({
-        id: `${poll.id}-${index}`,
-        text: option.text,
-        votes: option.votes,
-        percentage: option.percentage
-      }))
-    : poll.options.map((option, index) => ({
-        id: `${poll.id}-${index}`,
-        text: typeof option === 'string' ? option : option.text,
-        votes: poll.optionVotes?.[index] || 0,
-        percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
-      }));
 
   return (
     <div ref={detailRef} className="min-h-screen bg-secondary-900">
@@ -156,11 +211,11 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                 <span className="px-3 py-1 bg-primary-500/20 text-primary-400 rounded-full text-sm font-medium">
                   {poll.category}
                 </span>
-                {poll.isBlockchain && (
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
-                    Blockchain
-                  </span>
-                )}
+                              {poll.is_on_chain && (
+                <span className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium">
+                  Blockchain
+                </span>
+              )}
               </div>
             </div>
 
@@ -213,7 +268,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                 transition={{ delay: 0.6 }}
               >
                 <div className="text-3xl font-bold text-primary-400 mb-2">
-                  {poll.isActive ? 'Active' : 'Closed'}
+                  {poll.is_active ? 'Active' : 'Closed'}
                 </div>
                 <div className="text-secondary-300">Status</div>
               </motion.div>
@@ -254,7 +309,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
               )}
 
               {/* Automatic Settlement Status */}
-              {pollHasEnded && poll?.isBlockchain && (
+              {pollHasEnded && poll?.is_on_chain && (
                 <motion.div
                   className={`rounded-xl p-6 mb-6 text-center ${
                     isSettled 
@@ -276,22 +331,14 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                       <p className="text-blue-300 mb-4">
                         This poll has been automatically settled. The most voted option won and rewards have been distributed to voters who chose correctly.
                       </p>
-                      {poll.winningOption !== undefined && (
-                        <div className="bg-blue-500/20 rounded-lg p-4">
-                          <h4 className="text-blue-400 font-medium mb-2">Winning Option:</h4>
-                          <p className="text-blue-300 font-bold">
-                            {(() => {
-                              const option = poll.options[poll.winningOption];
-                              if (typeof option === 'string') {
-                                return option;
-                              } else if (option && typeof option === 'object' && 'text' in option) {
-                                return option.text;
-                              }
-                              return 'Unknown';
-                            })()}
-                          </p>
-                        </div>
-                      )}
+                                             {poll.winning_option !== null && poll.winning_option !== undefined && (
+                         <div className="bg-blue-500/20 rounded-lg p-4">
+                           <h4 className="text-blue-400 font-medium mb-2">Winning Option:</h4>
+                           <p className="text-blue-300 font-bold">
+                             {poll.options[poll.winning_option].optionText}
+                           </p>
+                         </div>
+                       )}
                     </>
                   ) : (
                     <>
@@ -332,7 +379,11 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
-                    onClick={() => !userHasVoted && !isVoting && !isBlockchainVoting && handleVoteClick(index)}
+                    onClick={() => {
+                      if (!userHasVoted && !isVoting && !isBlockchainVoting) {
+                        handleVoteClick(index);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-white">{option.text}</h3>
@@ -358,7 +409,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                           {option.percentage.toFixed(1)}% of total votes
                         </span>
                         <div className="flex items-center space-x-2">
-                          {poll.isBlockchain && (
+                          {poll.is_on_chain && (
                             <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
                               {entryFee} BNB
                             </span>
@@ -386,7 +437,7 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
               </div>
               
               {/* Blockchain Transaction Loading Overlay */}
-              {poll.isBlockchain && (isVoting || isBlockchainVoting) && (
+              {poll.is_on_chain && (isVoting || isBlockchainVoting) && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -446,13 +497,13 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center">
                     <span className="text-primary-400 font-semibold">
-                      {poll.creator?.name?.charAt(0) || 'U'}
+                      {poll.creator?.username?.charAt(0) || 'U'}
                     </span>
                   </div>
                   <div>
-                    <div className="text-white font-medium">{poll.creator?.name || 'Unknown'}</div>
+                    <div className="text-white font-medium">{poll.creator?.username || 'Unknown'}</div>
                     <div className="text-secondary-300 text-sm">
-                      Created on {new Date(poll.endDate || poll.end_time || '').toLocaleDateString()}
+                      Created on {new Date(poll.created_at || '').toLocaleDateString()}
                     </div>
                   </div>
                 </div>

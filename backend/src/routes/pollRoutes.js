@@ -173,47 +173,69 @@ router.get('/', optionalAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-// @desc    Get single poll
+// @desc    Get single poll with all details, options, votes, creator, and result
 // @route   GET /api/polls/:id
 // @access  Public
 router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
-  const { data: poll, error } = await supabase
+  // Get poll with all attributes and creator details
+  const { data: poll, error: pollError } = await supabase
     .from('polls')
     .select(`
       *,
-      users:creator_id (id, username, wallet_address, avatar_url)
+      users:creator_id (
+        id, username, wallet_address, avatar_url, credibility_score, reputation_level
+      )
     `)
     .eq('id', req.params.id)
     .single();
 
-  if (error || !poll) {
+  if (pollError || !poll) {
     return res.status(404).json({
       success: false,
       error: 'Poll not found'
     });
   }
 
-  // Get votes for this poll
-  const { data: votes } = await supabase
+  // Get all votes for this poll (all attributes)
+  const { data: votes, error: votesError } = await supabase
     .from('votes')
-    .select('option_index, voter_address, amount, created_at')
-    .eq('poll_id', poll.id)
-    .order('created_at', { ascending: false });
+    .select(`
+      *,
+      users:voter_id (
+        id, username, wallet_address, avatar_url, credibility_score, reputation_level
+      )
+    `)
+    .eq('poll_id', poll.id);
 
-  // Calculate vote counts and percentages
-  const optionVotes = poll.options.map((_, index) => {
-    return votes ? votes.filter(vote => vote.option_index === index).length : 0;
+  if (votesError) {
+    return res.status(400).json({
+      success: false,
+      error: votesError.message
+    });
+  }
+
+  // Group votes by option_index
+  const optionsWithVotes = poll.options.map((optionText, idx) => {
+    const optionVotes = votes.filter(v => v.option_index === idx);
+    return {
+      optionIndex: idx,
+      optionText,
+      votes: optionVotes
+    };
   });
 
-  const totalVotes = votes ? votes.length : 0;
-  const optionPercentages = optionVotes.map(count => 
-    totalVotes > 0 ? (count / totalVotes) * 100 : 0
-  );
+  // Get poll result if available
+  const { data: pollResult } = await supabase
+    .from('poll_results')
+    .select('*')
+    .eq('poll_id', poll.id)
+    .single();
 
   // Check if user has voted (if authenticated)
   let userVote = null;
   if (req.user && votes) {
-    const userVoteRecord = votes.find(vote => 
+    const userVoteRecord = votes.find(vote =>
+      vote.voter_address &&
       vote.voter_address.toLowerCase() === req.user.walletAddress.toLowerCase()
     );
     if (userVoteRecord) {
@@ -225,9 +247,10 @@ router.get('/:id', optionalAuth, asyncHandler(async (req, res) => {
     success: true,
     data: {
       ...poll,
-      optionVotes,
-      optionPercentages,
-      totalVotes,
+      creator: poll.users,
+      options: optionsWithVotes,
+      votes, // all votes flat
+      pollResult,
       userVote,
       isActive: new Date(poll.end_time) > new Date() && poll.is_active
     }

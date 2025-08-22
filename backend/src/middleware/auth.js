@@ -141,11 +141,6 @@ const verifyAuth = async (req, res, next) => {
       avatarUrl: user.avatar_url
     };
 
-    console.log('=== User authenticated ===');
-    console.log('User ID:', user.id);
-    console.log('Wallet Address:', user.wallet_address);
-    console.log('Username:', user.username);
-    console.log('Avatar URL:', user.avatar_url);
 
     next();
   } catch (error) {

@@ -14,6 +14,7 @@ import { usePolls } from '../hooks/usePolls';
 import { useAuth } from '../hooks/useAuth';
 import { useSimplePoll } from '../hooks/useSimplePoll';
 import type { Poll } from '../types';
+import type { PollDetail as PollDetailType } from '../types';
 
 const Dashboard: React.FC = () => {
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
@@ -74,28 +75,35 @@ const Dashboard: React.FC = () => {
         
         console.log('💾 Database blockchain polls:', databaseBlockchainPolls);
         
-        // Convert database blockchain polls to match our Poll interface
-        const formattedBlockchainPolls: Poll[] = databaseBlockchainPolls.map(poll => ({
-          id: poll.id, // Use the actual UUID from database
-          title: poll.title,
-          description: poll.description,
-          options: poll.options.map((option: string | { text: string }, index: number) => ({
-            text: typeof option === 'string' ? option : option.text,
-            votes: poll.optionVotes?.[index] || 0,
-            percentage: poll.totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / poll.totalVotes) * 100 : 0
-          })),
-          totalVotes: poll.totalVotes || 0,
-          endDate: poll.end_time,
-          isActive: !!(poll.is_active && poll.end_time && new Date(poll.end_time) > new Date()),
-          category: poll.category,
-          creator: {
-            name: poll.users?.username || 'Unknown',
-            avatar: poll.users?.avatar_url || ''
-          },
-          isBlockchain: true,
-          blockchainId: poll.blockchain_id,
-          userVote: poll.userVote // Now includes user vote from backend
-        }));
+                 // Convert database blockchain polls to match our Poll interface
+         const formattedBlockchainPolls: Poll[] = databaseBlockchainPolls.map(poll => ({
+           id: poll.id, // Use the actual UUID from database
+           title: poll.title,
+           description: poll.description,
+           options: poll.options.map((option) => {
+             const optionText = typeof option === 'string' ? option : 
+               (option && typeof option === 'object' && 'optionText' in option ? String(option.optionText) : 
+               (option && typeof option === 'object' && 'text' in option ? String(option.text) : ''));
+             const voteCount = Array.isArray(option.votes) ? option.votes.length : 0;
+             const percentage = (poll.total_votes || 0) > 0 ? (voteCount / (poll.total_votes || 0)) * 100 : 0;
+             return {
+               text: optionText,
+               votes: voteCount,
+               percentage: percentage
+             };
+           }),
+           totalVotes: poll.total_votes || 0,
+           endDate: poll.end_time,
+           isActive: !!(poll.is_active && poll.end_time && new Date(poll.end_time) > new Date()),
+           category: poll.category,
+           creator: {
+             name: poll.users?.username || 'Unknown',
+             avatar: poll.users?.avatar_url || ''
+           },
+           isBlockchain: poll.is_on_chain,
+           blockchainId: poll.blockchain_id,
+           userVote: poll.userVote // Now includes user vote from backend
+         }));
         
         // Combine API polls and formatted blockchain polls (avoiding duplicates)
         const apiOnlyPolls = polls.filter(poll => !poll.is_on_chain);
@@ -136,7 +144,7 @@ const Dashboard: React.FC = () => {
       const saveVoteToDatabase = async () => {
         try {
           const poll = allPolls.find(p => p.id === votedPollId);
-          if (poll?.isBlockchain) {
+          if (poll?.is_on_chain) {
             const optionIndex = parseInt(votedOption);
             
             console.log('💾 Saving blockchain vote to database');
@@ -210,36 +218,43 @@ const Dashboard: React.FC = () => {
     setFilteredPolls(filtered);
   }, [allPolls, searchQuery, selectedCategory]);
 
-  const handleVote = async (pollId: string, optionIndex: number) => {
+  const handleVote = async (poll: PollDetailType, optionIndex: number) => {
     if (!address) return;
 
     // Find the poll to determine if it's a blockchain poll
-    const poll = allPolls.find(p => p.id === pollId);
+   
     
     try {
-      if (poll?.isBlockchain) {
+      if (poll?.is_on_chain) {
         // For blockchain polls, we need to call the smart contract
         console.log('🔗 Blockchain poll detected - calling smart contract vote');
         console.log('💰 Entry fee required:', entryFee, 'BNB');
         
         // Use the blockchain ID from the poll data
-        const blockchainId = poll.blockchainId;
+        const blockchainId = poll.blockchain_id;
         const blockchainIdNum = typeof blockchainId === 'string' ? parseInt(blockchainId) : Number(blockchainId);
         
         // Store voting intention for success tracking
-        setVotedPollId(pollId);
+        setVotedPollId(poll.id);
         setVotedOption(optionIndex.toString());
         
         // Call the blockchain voting function
-        blockchainVote(blockchainIdNum, optionIndex);
+        await blockchainVote(blockchainIdNum, optionIndex);
         
         alert(`Please confirm the transaction in your wallet to submit your vote with ${entryFee} BNB!`);
+        // await voteOnPoll(poll.id, optionIndex);
+
+
       } else {
         // For API polls, use the regular voting flow
-        await voteOnPoll(pollId, optionIndex);
+        await voteOnPoll(poll.id, optionIndex);
         setShowSuccessModal(true);
-        setVotedPollId(pollId);
-        setVotedOption(poll?.options[optionIndex]?.text || `Option ${optionIndex + 1}`);
+        setVotedPollId(poll.id);
+        const option = poll?.options[optionIndex];
+        const optionText = typeof option === 'string' ? option : 
+          (option && typeof option === 'object' && 'optionText' in option ? String(option.optionText) : 
+          (option && typeof option === 'object' && 'text' in option ? String(option.text) : `Option ${optionIndex + 1}`));
+        setVotedOption(optionText);
       }
       
       // The polls will be automatically refreshed by the hook
@@ -392,7 +407,7 @@ const Dashboard: React.FC = () => {
   if (selectedPoll) {
     return (
       <PollDetail
-        poll={selectedPoll}
+        pollId={selectedPoll.id}
         onBack={handleBackToDashboard}
         onVote={handleVote}
       />
