@@ -10,6 +10,7 @@ import ScrollVelocity from './ScrollVelocity';
 import CreatePollModal from './CreatePollModal';
 import WalletConnectAuth from './WalletConnectAuth';
 import { usePolls } from '../hooks/usePolls';
+import { useSimplePoll } from '../hooks/useSimplePoll';
 import type { Poll } from '../types';
 
 
@@ -19,10 +20,15 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [allPolls, setAllPolls] = useState<Poll[]>([]);
+  const [blockchainPollsLoading, setBlockchainPollsLoading] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
   // API hooks
-  const { polls, loading: isLoading, fetchPolls, createPoll, voteOnPoll } = usePolls();
+  const { polls, loading: isLoading, fetchPolls, voteOnPoll } = usePolls();
+
+  // Blockchain hooks
+  const { getAllPolls } = useSimplePoll();
 
   // Wagmi hooks
   const { isConnected, address } = useAccount();
@@ -31,10 +37,66 @@ const Dashboard: React.FC = () => {
 
   const categories = ['All', 'Technology', 'Politics', 'Sports', 'Entertainment', 'Science', 'Lifestyle'];
 
-  // Load polls from API on component mount
+  // Fetch all polls (API + Blockchain)
+  const fetchAllPolls = async () => {
+    console.log('🔄 Fetching all polls...');
+    
+    // Fetch API polls first
+    await fetchPolls();
+  };
+
+  // Load blockchain polls when connected to correct network
+  const loadBlockchainPolls = async () => {
+    if (isConnected && isCorrectNetwork && getAllPolls) {
+      setBlockchainPollsLoading(true);
+      try {
+        const blockchainPolls = await getAllPolls();
+        console.log('🔗 Blockchain polls:', blockchainPolls);
+        
+        // Convert blockchain polls to match our Poll interface
+        const formattedBlockchainPolls: Poll[] = blockchainPolls.map(poll => ({
+          id: `blockchain-${poll.id}`,
+          title: poll.title,
+          description: poll.description,
+          options: poll.options.map((option: string) => ({
+            text: option,
+            votes: 0, // TODO: Get actual vote counts
+            percentage: 0
+          })),
+          totalVotes: 0, // TODO: Get total vote count
+          endDate: new Date(Number(poll.endTime) * 1000).toISOString(),
+          isActive: !poll.settled && new Date(Number(poll.endTime) * 1000) > new Date(),
+          category: 'Blockchain', // Default category for blockchain polls
+          creator: {
+            name: poll.creator,
+            avatar: ''
+          },
+          isBlockchain: true,
+          blockchainId: poll.id
+        }));
+        
+        // Combine API polls and blockchain polls
+        setAllPolls([...polls, ...formattedBlockchainPolls]);
+      } catch (error) {
+        console.error('❌ Error fetching blockchain polls:', error);
+        setAllPolls(polls); // Fallback to API polls only
+      } finally {
+        setBlockchainPollsLoading(false);
+      }
+    } else {
+      setAllPolls(polls);
+    }
+  };
+
+  // Load polls on component mount
   useEffect(() => {
-    fetchPolls();
-  }, []); // Remove fetchPolls from dependency array since it's now memoized
+    fetchAllPolls();
+  }, []);
+
+  // Load blockchain polls when wallet/network changes
+  useEffect(() => {
+    loadBlockchainPolls();
+  }, [polls, isConnected, isCorrectNetwork, chainId]);
 
   useEffect(() => {
     if (dashboardRef.current) {
@@ -55,7 +117,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let filtered = polls;
+    let filtered = allPolls;
 
     // Filter by search query
     if (searchQuery) {
@@ -72,7 +134,7 @@ const Dashboard: React.FC = () => {
     }
 
     setFilteredPolls(filtered);
-  }, [polls, searchQuery, selectedCategory]);
+  }, [allPolls, searchQuery, selectedCategory]);
 
   const handleVote = async (pollId: string, optionIndex: number) => {
     if (!address) return;
@@ -85,15 +147,24 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Transform API poll data to match PollCard interface
+  // Transform poll data to match PollCard interface
   const transformPollForCard = (poll: Poll) => {
     const totalVotes = poll.totalVotes || 0;
-    const options = poll.options.map((option, index) => ({
-      id: `${poll.id}-${index}`,
-      text: option,
-      votes: poll.optionVotes?.[index] || 0,
-      percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
-    }));
+    
+    // Handle different poll formats (API vs Blockchain)
+    const options = poll.isBlockchain 
+      ? poll.options.map((option, index) => ({
+          id: `${poll.id}-${index}`,
+          text: option.text,
+          votes: option.votes,
+          percentage: option.percentage
+        }))
+      : poll.options.map((option, index) => ({
+          id: `${poll.id}-${index}`,
+          text: typeof option === 'string' ? option : option.text,
+          votes: poll.optionVotes?.[index] || 0,
+          percentage: totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / totalVotes) * 100 : 0
+        }));
 
     return {
       id: poll.id,
@@ -101,10 +172,10 @@ const Dashboard: React.FC = () => {
       description: poll.description,
       options,
       totalVotes,
-      endDate: poll.end_time,
-      isActive: poll.is_active && new Date(poll.end_time) > new Date(),
+      endDate: poll.endDate || poll.end_time || '',
+      isActive: poll.isActive ?? (poll.is_active ? new Date(poll.end_time || '') > new Date() : false),
       category: poll.category,
-      creator: {
+      creator: poll.creator || {
         name: poll.users?.username || 'Unknown',
         avatar: poll.users?.avatar_url || ''
       }
@@ -119,7 +190,7 @@ const Dashboard: React.FC = () => {
     setSelectedCategory(category);
   };
 
-  if (isLoading) {
+  if (isLoading || blockchainPollsLoading) {
     return (
       <div className="min-h-screen bg-secondary-900 flex items-center justify-center">
         <div className="text-center">

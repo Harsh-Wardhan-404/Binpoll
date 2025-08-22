@@ -9,7 +9,6 @@ import { Stats } from './components/Stats';
 import { CTA } from './components/CTA';
 import { Footer } from './components/Footer';
 import Dashboard from './components/Dashboard';
-import AuthTest from './components/AuthTest';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
@@ -119,7 +118,6 @@ function App() {
       `}</style>
 
       <Navigation onNavigate={setCurrentPage} currentPage={currentPage} />
-      <AuthTest />
       
       {currentPage === 'home' ? (
         <main>
