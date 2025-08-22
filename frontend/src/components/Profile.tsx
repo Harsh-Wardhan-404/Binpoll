@@ -100,20 +100,20 @@ const Profile: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              ) : profile ? (
-                <div className="flex justify-center mb-12">
-                  <ProfileCard
-                    name={profile.username}
-                    title={profile.stats.rank}
-                    handle={profile.walletAddress ? `${profile.walletAddress.slice(0, 6)}...${profile.walletAddress.slice(-4)}` : 'user'}
-                    status="Online"
-                    contactText="Edit Profile"
-                    avatarUrl={profile.avatarUrl}
-                    showUserInfo={true}
-                    onContactClick={() => console.log('Edit profile clicked')}
-                  />
-                </div>
-              ) : null}
+                             ) : profile ? (
+                 <div className="flex justify-center mb-12">
+                   <ProfileCard
+                     name={profile.user?.username || 'User'}
+                     title={profile.user?.reputationLevel || 'Member'}
+                     handle={profile.user?.walletAddress ? `${profile.user.walletAddress.slice(0, 6)}...${profile.user.walletAddress.slice(-4)}` : 'user'}
+                     status="Online"
+                    //  contactText="Edit Profile"
+                     avatarUrl={profile.user?.avatarUrl}
+                     showUserInfo={true}
+                    //  onContactClick={() => console.log('Edit profile clicked')}
+                   />
+                 </div>
+               ) : null}
 
               {/* Profile Stats */}
               {profile && (
@@ -130,8 +130,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.totalPollsCreated}</p>
+                                             <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
+                       <p className="text-2xl font-bold text-primary-400">{profile.user?.totalPollsCreated || 0}</p>
                     </div>
                   </motion.div>
 
@@ -147,8 +147,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.totalVotesCast}</p>
+                                             <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
+                       <p className="text-2xl font-bold text-primary-400">{profile.statistics?.totalVotesCast || 0}</p>
                     </div>
                   </motion.div>
 
@@ -164,8 +164,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Total Earnings</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.stats.totalEarnings} BNB</p>
+                                             <h3 className="text-lg font-semibold text-white mb-2">Credibility Score</h3>
+                       <p className="text-2xl font-bold text-primary-400">{profile.user?.credibilityScore || 0}%</p>
                     </div>
                   </motion.div>
 
@@ -181,8 +181,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                         </svg>
                       </div>
-                      <h3 className="text-lg font-semibold text-white mb-2">Rank</h3>
-                      <p className="text-lg font-medium text-primary-400">{profile.stats.rank}</p>
+                                             <h3 className="text-lg font-semibold text-white mb-2">Reputation Level</h3>
+                       <p className="text-lg font-medium text-primary-400">{profile.user?.reputationLevel || 'Novice'}</p>
                     </div>
                   </motion.div>
                 </div>
@@ -198,73 +198,162 @@ const Profile: React.FC = () => {
                 >
                   <h3 className="text-xl font-semibold text-white mb-4">Wallet Information</h3>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-secondary-300">Wallet Address:</span>
-                      <span className="font-mono text-white">{profile.walletAddress}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-secondary-300">Username:</span>
-                      <span className="text-white">{profile.username}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-secondary-300">User ID:</span>
-                      <span className="text-white">{profile.id}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-secondary-300">Balance:</span>
-                      <span className="text-white">{profile.balance.bnb} BNB (${profile.balance.usd})</span>
-                    </div>
+                                         <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">Wallet Address:</span>
+                       <span className="font-mono text-white">{profile.user?.walletAddress || 'Not connected'}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">Username:</span>
+                       <span className="text-white">{profile.user?.username || 'User'}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">User ID:</span>
+                       <span className="text-white">{profile.user?.id || 'N/A'}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">Credibility Score:</span>
+                       <span className="text-white">{profile.user?.credibilityScore || 0}%</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">Reputation Level:</span>
+                       <span className="text-white">{profile.user?.reputationLevel || 'Novice'}</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-secondary-300">Member Since:</span>
+                       <span className="text-white">{profile.user?.createdAt ? new Date(profile.user.createdAt).toLocaleDateString() : 'N/A'}</span>
+                     </div>
                   </div>
                 </motion.div>
               )}
 
-              {/* Recent Activity */}
-              {profile && profile.recentActivity && profile.recentActivity.length > 0 && (
+                             {/* Poll Statistics */}
+               {profile && profile.statistics && (
+                 <motion.div
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: 0.7 }}
+                   className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-8"
+                 >
+                   <h3 className="text-xl font-semibold text-white mb-4">Poll Statistics</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <div className="text-center">
+                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                       </div>
+                       <h4 className="text-lg font-semibold text-white mb-1">Active Polls</h4>
+                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.activePolls || 0}</p>
+                     </div>
+                     <div className="text-center">
+                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                         </svg>
+                       </div>
+                       <h4 className="text-lg font-semibold text-white mb-1">Ended Polls</h4>
+                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.endedPolls || 0}</p>
+                     </div>
+                     <div className="text-center">
+                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                         </svg>
+                       </div>
+                       <h4 className="text-lg font-semibold text-white mb-1">Avg Credibility</h4>
+                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.averageCredibility || 0}%</p>
+                     </div>
+                   </div>
+                 </motion.div>
+               )}
+
+               {/* Recent Votes */}
+               {profile && profile.statistics?.recentVotes && Array.isArray(profile.statistics.recentVotes) && profile.statistics.recentVotes.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7 }}
                   className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                 >
-                  <h3 className="text-xl font-semibold text-white mb-4">Recent Activity</h3>
-                  <div className="space-y-3">
-                    {profile.recentActivity.slice(0, 5).map((activity, index) => (
-                      <div key={activity.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              {activity.type === 'poll_created' && (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              )}
-                              {activity.type === 'vote_cast' && (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                              )}
-                              {activity.type === 'poll_ended' && (
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              )}
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-white font-medium">{activity.title}</p>
-                            <p className="text-secondary-300 text-sm">
-                              {new Date(activity.timestamp).toLocaleDateString()} at {new Date(activity.timestamp).toLocaleTimeString()}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-primary-400 text-sm font-medium capitalize">
-                          {activity.type.replace('_', ' ')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-};
+                                     <h3 className="text-xl font-semibold text-white mb-4">Recent Votes</h3>
+                   <div className="space-y-3">
+                     {profile.statistics.recentVotes.slice(0, 5).map((vote, index) => (
+                       <div key={`${vote.poll_id}-${vote.created_at}`} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+                             <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                             </svg>
+                           </div>
+                           <div>
+                             <p className="text-white font-medium">Poll: {vote.poll_id.slice(0, 8)}...</p>
+                             <p className="text-secondary-300 text-sm">
+                               {new Date(vote.created_at).toLocaleDateString()} at {new Date(vote.created_at).toLocaleTimeString()}
+                             </p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <span className="text-primary-400 text-sm font-medium">
+                             Option {vote.option_index + 1}
+                           </span>
+                           <p className="text-secondary-300 text-xs">
+                             Weight: {vote.vote_weight}
+                           </p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                                 </motion.div>
+               )}
+
+               {/* User's Polls */}
+               {profile && profile.polls && Array.isArray(profile.polls) && profile.polls.length > 0 && (
+                 <motion.div
+                   initial={{ opacity: 0, y: 20 }}
+                   animate={{ opacity: 1, y: 0 }}
+                   transition={{ delay: 0.8 }}
+                   className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                 >
+                   <h3 className="text-xl font-semibold text-white mb-4">Your Polls</h3>
+                   <div className="space-y-3">
+                     {profile.polls.slice(0, 5).map((poll, index) => (
+                       <div key={poll.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                         <div className="flex items-center space-x-3">
+                           <div className="w-8 h-8 bg-primary-500/20 rounded-full flex items-center justify-center">
+                             <svg className="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                             </svg>
+                           </div>
+                           <div>
+                             <p className="text-white font-medium">{poll.title}</p>
+                             <p className="text-secondary-300 text-sm">
+                               Created: {new Date(poll.created_at).toLocaleDateString()}
+                             </p>
+                           </div>
+                         </div>
+                         <div className="text-right">
+                           <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                             poll.is_active 
+                               ? 'bg-green-500/20 text-green-400' 
+                               : 'bg-red-500/20 text-red-400'
+                           }`}>
+                             {poll.is_active ? 'Active' : 'Ended'}
+                           </span>
+                           <p className="text-secondary-300 text-xs mt-1">
+                             {poll.total_votes} votes
+                           </p>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                 </motion.div>
+               )}
+             </div>
+           </div>
+         </section>
+       </div>
+     </div>
+   );
+ };
 
 export default Profile;

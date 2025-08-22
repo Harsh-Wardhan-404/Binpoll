@@ -70,6 +70,24 @@
     display: none;
   }
   
+  /* Modal scrollbar styles */
+  .modal-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+  }
+  
+  .modal-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+  
   /* Enhanced animations */
   @keyframes shimmer {
     0% { background-position: -200% center; }

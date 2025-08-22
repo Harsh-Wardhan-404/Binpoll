@@ -131,14 +131,14 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
                   )}
                 </div>
               </div>
-              <button
+              {/* <button
                 className="pc-contact-btn"
                 onClick={handleContactClick}
                 type="button"
                 aria-label={`Contact ${displayName || "user"}`}
               >
                 {contactText}
-              </button>
+              </button> */}
             </div>
           )}
         </div>
