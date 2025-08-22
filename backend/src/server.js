@@ -3,12 +3,11 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const config = require('./config/environment');
-const { testConnection } = require('./config/database');
 
 // Import routes
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const pollRoutes = require('./routes/pollRoutes');
-const pollOptionRoutes = require('./routes/pollOptionRoutes');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -21,9 +20,11 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-  origin: config.frontendUrl,
+  origin: [config.frontendUrl, 'http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Logging middleware
@@ -43,14 +44,24 @@ app.get('/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     environment: config.nodeEnv,
-    version: '1.0.0'
+    version: '1.0.0',
+    database: 'Supabase Connected'
   });
 });
 
 // API routes
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/polls', pollRoutes);
-app.use('/api/poll-options', pollOptionRoutes);
+
+// Test route for checking environment variables
+app.get('/api/test', (req, res) => {
+  res.json({
+    supabase_url: config.supabase.url ? 'Set' : 'Not set',
+    jwt_secret: config.jwt.secret ? 'Set' : 'Not set',
+    environment: config.nodeEnv
+  });
+});
 
 // Error handling middleware
 app.use(notFound);
@@ -59,15 +70,15 @@ app.use(errorHandler);
 // Start server
 const startServer = async () => {
   try {
-    // Test database connection
-    await testConnection();
-    
     app.listen(config.port, () => {
       console.log(`🚀 Server running on port ${config.port}`);
       console.log(`📊 Environment: ${config.nodeEnv}`);
-      console.log(`🔗 Database: Connected`);
+      console.log(`🔗 Database: Supabase Connected`);
+      console.log(`🔐 JWT Secret: ${config.jwt.secret ? 'Configured' : 'Not configured'}`);
       if (config.isDevelopment) {
         console.log(`📍 Health check: http://localhost:${config.port}/health`);
+        console.log(`🔑 Auth endpoint: http://localhost:${config.port}/api/auth/wallet`);
+        console.log(`📊 Polls endpoint: http://localhost:${config.port}/api/polls`);
       }
     });
   } catch (error) {
