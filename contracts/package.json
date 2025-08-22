@@ -1,18 +1,23 @@
 {
   "name": "contracts",
   "version": "1.0.0",
-  "description": "",
+  "description": "BinPoll Smart Contracts",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat ignition deploy ignition/modules/SimplePoll.ts",
+    "clean": "npx hardhat clean"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
-    "dotenv": "^17.2.1",
-    "hardhat": "^3.0.0"
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "forge-std": "^1.1.2"
   }
 }
