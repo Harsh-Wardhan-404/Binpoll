@@ -27,6 +27,14 @@ const Dashboard: React.FC = () => {
   const [votedPollId, setVotedPollId] = useState<string | null>(null);
   const [votedOption, setVotedOption] = useState<string>('');
   const dashboardRef = useRef<HTMLDivElement>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // State for expanded sections
+  const [expandedSections, setExpandedSections] = useState({
+    recents: false,
+    hots: false,
+    large_bets: false
+  });
 
   // Wagmi hooks
   const { isConnected, address } = useAccount();
@@ -258,6 +266,52 @@ const Dashboard: React.FC = () => {
     setSelectedCategory(category);
   };
 
+  const toggleSection = (section: 'recents' | 'hots' | 'large_bets') => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Refresh dashboard data when modal is closed (indicating a poll was created)
+  const handleCreateModalClose = async () => {
+    setShowCreateModal(false);
+    // Refresh polls data to show the newly created poll
+    if (isAuthenticated) {
+      console.log('🔄 Refreshing dashboard data after poll creation...');
+      setIsRefreshing(true);
+      try {
+        await fetchPolls();
+        await loadBlockchainPolls();
+      } finally {
+        setIsRefreshing(false);
+      }
+    }
+  };
+
+  // Listen for successful poll creation and refresh data
+  useEffect(() => {
+    const handlePollCreated = async () => {
+      if (isAuthenticated) {
+        console.log('🔄 Poll created - refreshing dashboard data...');
+        setIsRefreshing(true);
+        try {
+          await fetchPolls();
+          await loadBlockchainPolls();
+        } finally {
+          setIsRefreshing(false);
+        }
+      }
+    };
+
+    // Listen for custom event when poll is created
+    window.addEventListener('poll-created', handlePollCreated);
+    
+    return () => {
+      window.removeEventListener('poll-created', handlePollCreated);
+    };
+  }, [isAuthenticated, fetchPolls, loadBlockchainPolls]);
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-secondary-900">
@@ -345,7 +399,7 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (isLoading || blockchainPollsLoading) {
+  if (isLoading || blockchainPollsLoading || isRefreshing) {
     return (
       <div className="min-h-screen bg-secondary-900">
         {/* Galaxy Background */}
@@ -369,7 +423,9 @@ const Dashboard: React.FC = () => {
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-secondary-300 text-lg">Loading polls...</p>
+            <p className="text-secondary-300 text-lg">
+              {isRefreshing ? 'Refreshing polls...' : 'Loading polls...'}
+            </p>
           </div>
         </div>
       </div>
@@ -504,22 +560,68 @@ const Dashboard: React.FC = () => {
                   </div>
                   <AnimatePresence mode="wait">
                     {dashboardPolls.recents.length > 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
-                      >
-                        {dashboardPolls.recents.map((poll, index) => (
-                          <PollCardSmall
-                            key={poll.id}
-                            poll={poll}
-                            onClick={() => handlePollClick(poll)}
-                            index={index}
-                          />
-                        ))}
-                      </motion.div>
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                        >
+                          {dashboardPolls.recents.slice(0, 3).map((poll, index) => (
+                            <PollCardSmall
+                              key={poll.id}
+                              poll={poll}
+                              onClick={() => handlePollClick(poll)}
+                              index={index}
+                            />
+                          ))}
+                        </motion.div>
+                        
+                        {/* Show more/less button if there are more than 3 polls */}
+                        {dashboardPolls.recents.length > 3 && (
+                          <div className="text-center mt-8">
+                            <motion.button
+                              onClick={() => toggleSection('recents')}
+                              className="px-6 py-3 bg-white/5 text-secondary-300 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-300 flex items-center space-x-2 mx-auto"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <span>{expandedSections.recents ? 'Show Less' : `Show ${dashboardPolls.recents.length - 3} More`}</span>
+                              <svg 
+                                className={`w-5 h-5 transition-transform duration-300 ${expandedSections.recents ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </motion.button>
+                          </div>
+                        )}
+                        
+                        {/* Expanded polls */}
+                        <AnimatePresence>
+                          {expandedSections.recents && dashboardPolls.recents.length > 3 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mt-6"
+                            >
+                              {dashboardPolls.recents.slice(3).map((poll, index) => (
+                                <PollCardSmall
+                                  key={poll.id}
+                                  poll={poll}
+                                  onClick={() => handlePollClick(poll)}
+                                  index={index + 3}
+                                />
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
                     ) : (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -540,22 +642,68 @@ const Dashboard: React.FC = () => {
                   </div>
                   <AnimatePresence mode="wait">
                     {dashboardPolls.hots.length > 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
-                      >
-                        {dashboardPolls.hots.map((poll, index) => (
-                          <PollCardSmall
-                            key={poll.id}
-                            poll={poll}
-                            onClick={() => handlePollClick(poll)}
-                            index={index}
-                          />
-                        ))}
-                      </motion.div>
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                        >
+                          {dashboardPolls.hots.slice(0, 3).map((poll, index) => (
+                            <PollCardSmall
+                              key={poll.id}
+                              poll={poll}
+                              onClick={() => handlePollClick(poll)}
+                              index={index}
+                            />
+                          ))}
+                        </motion.div>
+                        
+                        {/* Show more/less button if there are more than 3 polls */}
+                        {dashboardPolls.hots.length > 3 && (
+                          <div className="text-center mt-8">
+                            <motion.button
+                              onClick={() => toggleSection('hots')}
+                              className="px-6 py-3 bg-white/5 text-secondary-300 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-300 flex items-center space-x-2 mx-auto"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <span>{expandedSections.hots ? 'Show Less' : `Show ${dashboardPolls.hots.length - 3} More`}</span>
+                              <svg 
+                                className={`w-5 h-5 transition-transform duration-300 ${expandedSections.hots ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </motion.button>
+                          </div>
+                        )}
+                        
+                        {/* Expanded polls */}
+                        <AnimatePresence>
+                          {expandedSections.hots && dashboardPolls.hots.length > 3 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mt-6"
+                            >
+                              {dashboardPolls.hots.slice(3).map((poll, index) => (
+                                <PollCardSmall
+                                  key={poll.id}
+                                  poll={poll}
+                                  onClick={() => handlePollClick(poll)}
+                                  index={index + 3}
+                                />
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
                     ) : (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -576,22 +724,68 @@ const Dashboard: React.FC = () => {
                   </div>
                   <AnimatePresence mode="wait">
                     {dashboardPolls.large_bets.length > 0 ? (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
-                      >
-                        {dashboardPolls.large_bets.map((poll, index) => (
-                          <PollCardSmall
-                            key={poll.id}
-                            poll={poll}
-                            onClick={() => handlePollClick(poll)}
-                            index={index}
-                          />
-                        ))}
-                      </motion.div>
+                      <>
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto"
+                        >
+                          {dashboardPolls.large_bets.slice(0, 3).map((poll, index) => (
+                            <PollCardSmall
+                              key={poll.id}
+                              poll={poll}
+                              onClick={() => handlePollClick(poll)}
+                              index={index}
+                            />
+                          ))}
+                        </motion.div>
+                        
+                        {/* Show more/less button if there are more than 3 polls */}
+                        {dashboardPolls.large_bets.length > 3 && (
+                          <div className="text-center mt-8">
+                            <motion.button
+                              onClick={() => toggleSection('large_bets')}
+                              className="px-6 py-3 bg-white/5 text-secondary-300 hover:bg-white/10 border border-white/10 rounded-full transition-all duration-300 flex items-center space-x-2 mx-auto"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <span>{expandedSections.large_bets ? 'Show Less' : `Show ${dashboardPolls.large_bets.length - 3} More`}</span>
+                              <svg 
+                                className={`w-5 h-5 transition-transform duration-300 ${expandedSections.large_bets ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </motion.button>
+                          </div>
+                        )}
+                        
+                        {/* Expanded polls */}
+                        <AnimatePresence>
+                          {expandedSections.large_bets && dashboardPolls.large_bets.length > 3 && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mt-6"
+                            >
+                              {dashboardPolls.large_bets.slice(3).map((poll, index) => (
+                                <PollCardSmall
+                                  key={poll.id}
+                                  poll={poll}
+                                  onClick={() => handlePollClick(poll)}
+                                  index={index + 3}
+                                />
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </>
                     ) : (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
@@ -612,7 +806,7 @@ const Dashboard: React.FC = () => {
       {/* Create Poll Modal */}
       <CreatePollModal
         isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
+        onClose={handleCreateModalClose}
       />
       
       {/* Success Modal */}

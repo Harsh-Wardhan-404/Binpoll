@@ -89,16 +89,16 @@ const ProfileCardComponent: React.FC<ProfileCardProps> = ({
               {profile?.statistics && (
                 <div className="pc-stats">
                   <div className="pc-stat-item">
-                    <span className="pc-stat-label">Polls</span>
-                    <span className="pc-stat-value">{profile.user?.totalPollsCreated || 0}</span>
+                    <span className="pc-stat-label">Active Polls</span>
+                    <span className="pc-stat-value">{profile.statistics.activePolls ?? 0}</span>
                   </div>
                   <div className="pc-stat-item">
-                    <span className="pc-stat-label">Votes</span>
-                    <span className="pc-stat-value">{profile.user?.totalVotesCast || 0}</span>
+                    <span className="pc-stat-label">Ended Polls</span>
+                    <span className="pc-stat-value">{profile.statistics.endedPolls ?? 0}</span>
                   </div>
                   <div className="pc-stat-item">
-                    <span className="pc-stat-label">Earnings</span>
-                    <span className="pc-stat-value">{profile.user?.totalEarnings || 0} BNB</span>
+                    <span className="pc-stat-label">Votes Cast</span>
+                    <span className="pc-stat-value">{profile.statistics.totalVotesCast ?? 0}</span>
                   </div>
                 </div>
               )}

@@ -130,8 +130,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                                             <h3 className="text-lg font-semibold text-white mb-2">Polls Created</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.user?.totalPollsCreated || 0}</p>
+                      <h3 className="text-lg font-semibold text-white mb-2">Active Polls</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.statistics?.activePolls ?? 0}</p>
                     </div>
                   </motion.div>
 
@@ -147,8 +147,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
                         </svg>
                       </div>
-                                             <h3 className="text-lg font-semibold text-white mb-2">Votes Cast</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.user?.totalVotesCast || 0}</p>
+                      <h3 className="text-lg font-semibold text-white mb-2">Ended Polls</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.statistics?.endedPolls ?? 0}</p>
                     </div>
                   </motion.div>
 
@@ -164,8 +164,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                                             <h3 className="text-lg font-semibold text-white mb-2">Credibility Score</h3>
-                      <p className="text-2xl font-bold text-primary-400">{profile.user?.credibilityScore || 0}%</p>
+                      <h3 className="text-lg font-semibold text-white mb-2">Total Votes Cast</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.statistics?.totalVotesCast ?? 0}</p>
                     </div>
                   </motion.div>
 
@@ -181,8 +181,8 @@ const Profile: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                         </svg>
                       </div>
-                                             <h3 className="text-lg font-semibold text-white mb-2">Reputation Level</h3>
-                      <p className="text-lg font-medium text-primary-400">{profile.user?.reputationLevel || 'Novice'}</p>
+                      <h3 className="text-lg font-semibold text-white mb-2">Avg Credibility</h3>
+                      <p className="text-2xl font-bold text-primary-400">{profile.statistics?.averageCredibility ?? 0}%</p>
                     </div>
                   </motion.div>
                 </div>
@@ -226,48 +226,7 @@ const Profile: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Poll Statistics */}
-               {profile && profile.statistics && (
-                 <motion.div
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: 0.7 }}
-                   className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mb-8"
-                 >
-                   <h3 className="text-xl font-semibold text-white mb-4">Poll Statistics</h3>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                     <div className="text-center">
-                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                         </svg>
-                       </div>
-                       <h4 className="text-lg font-semibold text-white mb-1">Active Polls</h4>
-                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.activePolls || 0}</p>
-                     </div>
-                     <div className="text-center">
-                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                         </svg>
-                       </div>
-                       <h4 className="text-lg font-semibold text-white mb-1">Ended Polls</h4>
-                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.endedPolls || 0}</p>
-                     </div>
-                     <div className="text-center">
-                       <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                         <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                         </svg>
-                       </div>
-                       <h4 className="text-lg font-semibold text-white mb-1">Avg Credibility</h4>
-                       <p className="text-2xl font-bold text-primary-400">{profile.statistics.averageCredibility || 0}%</p>
-                     </div>
-                   </div>
-                 </motion.div>
-               )}
-
-               {/* Recent Votes */}
+              {/* Recent Votes */}
                {profile && profile.statistics?.recentVotes && Array.isArray(profile.statistics.recentVotes) && profile.statistics.recentVotes.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -398,3 +357,4 @@ const Profile: React.FC = () => {
  };
 
 export default Profile;
+

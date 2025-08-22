@@ -94,6 +94,8 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
           });
           
           if (result) {
+            // Dispatch custom event to notify dashboard to refresh
+            window.dispatchEvent(new CustomEvent('poll-created'));
             handleClose();
             alert('Poll created successfully on the blockchain and saved to database!');
           } else {
@@ -186,6 +188,8 @@ const CreatePollModal: React.FC<CreatePollModalProps> = ({ isOpen, onClose }) =>
         });
 
         if (newPoll) {
+          // Dispatch custom event to notify dashboard to refresh
+          window.dispatchEvent(new CustomEvent('poll-created'));
           // Close modal and reset form
           handleClose();
           
