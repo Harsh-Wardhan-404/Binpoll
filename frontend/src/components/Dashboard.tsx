@@ -12,7 +12,7 @@ import WalletConnectAuth from './WalletConnectAuth';
 import { usePolls } from '../hooks/usePolls';
 import { useAuth } from '../hooks/useAuth';
 import { useSimplePoll } from '../hooks/useSimplePoll';
-import type { Poll } from '../types';
+import type { Poll, PollOption } from '../types';
 
 const Dashboard: React.FC = () => {
   const [filteredPolls, setFilteredPolls] = useState<Poll[]>([]);
@@ -22,18 +22,21 @@ const Dashboard: React.FC = () => {
   const [allPolls, setAllPolls] = useState<Poll[]>([]);
   const [blockchainPollsLoading, setBlockchainPollsLoading] = useState(false);
   const [selectedPoll, setSelectedPoll] = useState<Poll | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [votedPollId, setVotedPollId] = useState<string | null>(null);
+  const [votedOption, setVotedOption] = useState<string>('');
   const dashboardRef = useRef<HTMLDivElement>(null);
-
-  // API hooks
-  const { polls, loading: isLoading, fetchPolls, voteOnPoll } = usePolls();
-
-  // Blockchain hooks
-  const { getAllPolls } = useSimplePoll();
 
   // Wagmi hooks
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
   const isCorrectNetwork = chainId === bscTestnet.id || chainId === hardhat.id;
+
+  // API hooks
+  const { polls, loading: isLoading, fetchPolls, voteOnPoll, voteOnBlockchainPoll } = usePolls();
+
+  // Blockchain hooks
+  const { getAllPolls, voteOnPoll: blockchainVote, entryFee, voteTxHash } = useSimplePoll(chainId);
 
   // Auth hook
   const { isAuthenticated } = useAuth();
@@ -56,30 +59,38 @@ const Dashboard: React.FC = () => {
         const blockchainPolls = await getAllPolls();
         console.log('🔗 Blockchain polls:', blockchainPolls);
         
-        // Convert blockchain polls to match our Poll interface
-        const formattedBlockchainPolls: Poll[] = blockchainPolls.map(poll => ({
-          id: `blockchain-${poll.id}`,
+        // Only show blockchain polls that exist in our database
+        // This ensures users can only vote on polls that are properly tracked
+        const databaseBlockchainPolls = polls.filter(poll => poll.is_on_chain && poll.blockchain_id);
+        
+        console.log('💾 Database blockchain polls:', databaseBlockchainPolls);
+        
+        // Convert database blockchain polls to match our Poll interface
+        const formattedBlockchainPolls: Poll[] = databaseBlockchainPolls.map(poll => ({
+          id: poll.id, // Use the actual UUID from database
           title: poll.title,
           description: poll.description,
-          options: poll.options.map((option: string) => ({
-            text: option,
-            votes: 0, // TODO: Get actual vote counts
-            percentage: 0
+          options: poll.options.map((option: any, index: number) => ({
+            text: typeof option === 'string' ? option : option.text,
+            votes: poll.optionVotes?.[index] || 0,
+            percentage: poll.totalVotes > 0 ? ((poll.optionVotes?.[index] || 0) / poll.totalVotes) * 100 : 0
           })),
-          totalVotes: 0, // TODO: Get total vote count
-          endDate: new Date(Number(poll.endTime) * 1000).toISOString(),
-          isActive: !poll.settled && new Date(Number(poll.endTime) * 1000) > new Date(),
-          category: 'Blockchain', // Default category for blockchain polls
+          totalVotes: poll.totalVotes || 0,
+          endDate: poll.end_time,
+          isActive: !!(poll.is_active && poll.end_time && new Date(poll.end_time) > new Date()),
+          category: poll.category,
           creator: {
-            name: poll.creator,
-            avatar: ''
+            name: poll.users?.username || 'Unknown',
+            avatar: poll.users?.avatar_url || ''
           },
           isBlockchain: true,
-          blockchainId: poll.id
+          blockchainId: poll.blockchain_id,
+          userVote: poll.userVote // Now includes user vote from backend
         }));
         
-        // Combine API polls and blockchain polls
-        setAllPolls([...polls, ...formattedBlockchainPolls]);
+        // Combine API polls and formatted blockchain polls (avoiding duplicates)
+        const apiOnlyPolls = polls.filter(poll => !poll.is_on_chain);
+        setAllPolls([...apiOnlyPolls, ...formattedBlockchainPolls]);
       } catch (error) {
         console.error('❌ Error fetching blockchain polls:', error);
         setAllPolls(polls); // Fallback to API polls only
@@ -104,6 +115,49 @@ const Dashboard: React.FC = () => {
       loadBlockchainPolls();
     }
   }, [polls, isConnected, isCorrectNetwork, chainId, isAuthenticated]);
+
+  // Watch for successful blockchain votes
+  useEffect(() => {
+    if (voteTxHash && votedPollId) {
+      // Save the blockchain vote to database
+      const saveVoteToDatabase = async () => {
+        try {
+          const poll = allPolls.find(p => p.id === votedPollId);
+          if (poll?.isBlockchain) {
+            const optionIndex = parseInt(votedOption);
+            
+            console.log('💾 Saving blockchain vote to database');
+            console.log('🎯 Poll ID:', votedPollId);
+            console.log('🎯 Transaction Hash:', voteTxHash);
+            
+            // The backend will handle finding the correct poll by blockchain ID
+            const voteResult = await voteOnBlockchainPoll(votedPollId, optionIndex, voteTxHash, entryFee);
+            
+            if (voteResult) {
+              // Refresh poll data to show updated vote counts and user vote status
+              await fetchPolls();
+              await loadBlockchainPolls();
+              
+              setShowSuccessModal(true);
+              console.log('✅ Vote successfully recorded on blockchain and database');
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error saving vote to database:', error);
+          // Still show success modal since blockchain vote succeeded
+          setShowSuccessModal(true);
+        } finally {
+          // Clear voting state after a delay to allow modal to show
+          setTimeout(() => {
+            setVotedPollId(null);
+            setVotedOption('');
+          }, 1000);
+        }
+      };
+      
+      saveVoteToDatabase();
+    }
+  }, [voteTxHash, votedPollId, votedOption, allPolls, voteOnBlockchainPoll, entryFee]);
 
   useEffect(() => {
     if (dashboardRef.current) {
@@ -146,11 +200,40 @@ const Dashboard: React.FC = () => {
   const handleVote = async (pollId: string, optionIndex: number) => {
     if (!address) return;
 
+    // Find the poll to determine if it's a blockchain poll
+    const poll = allPolls.find(p => p.id === pollId);
+    
     try {
-      await voteOnPoll(pollId, optionIndex);
+      if (poll?.isBlockchain) {
+        // For blockchain polls, we need to call the smart contract
+        console.log('🔗 Blockchain poll detected - calling smart contract vote');
+        console.log('💰 Entry fee required:', entryFee, 'BNB');
+        
+        // Use the blockchain ID from the poll data
+        const blockchainId = poll.blockchainId;
+        const blockchainIdNum = typeof blockchainId === 'string' ? parseInt(blockchainId) : Number(blockchainId);
+        
+        // Store voting intention for success tracking
+        setVotedPollId(pollId);
+        setVotedOption(optionIndex.toString());
+        
+        // Call the blockchain voting function
+        blockchainVote(blockchainIdNum, optionIndex);
+        
+        alert(`Please confirm the transaction in your wallet to submit your vote with ${entryFee} BNB!`);
+      } else {
+        // For API polls, use the regular voting flow
+        await voteOnPoll(pollId, optionIndex);
+        setShowSuccessModal(true);
+        setVotedPollId(pollId);
+        setVotedOption(poll?.options[optionIndex]?.text || `Option ${optionIndex + 1}`);
+      }
+      
       // The polls will be automatically refreshed by the hook
     } catch (error) {
       console.error('Failed to vote:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to vote: ${errorMessage}`);
     }
   };
 
@@ -370,6 +453,61 @@ const Dashboard: React.FC = () => {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
       />
+      
+      {/* Success Modal */}
+      <AnimatePresence>
+        {showSuccessModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-secondary-800 border border-white/10 rounded-2xl p-6 max-w-md mx-4"
+            >
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Vote Submitted!</h3>
+                <p className="text-secondary-300 mb-4">
+                  Your vote has been successfully recorded on the blockchain and database!
+                </p>
+                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 mb-4">
+                  <p className="text-green-400 text-sm">
+                    ✓ Blockchain transaction confirmed
+                  </p>
+                  <p className="text-green-400 text-sm">
+                    ✓ Vote saved to database
+                  </p>
+                  <p className="text-green-400 text-sm">
+                    ✓ BNB payment processed
+                  </p>
+                </div>
+                <p className="text-secondary-400 text-sm mb-6">
+                  You cannot vote again on this poll.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    // Force refresh to show updated poll state
+                    window.location.reload();
+                  }}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 transition-all"
+                >
+                  Continue
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

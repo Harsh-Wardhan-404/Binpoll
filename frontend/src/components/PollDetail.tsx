@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { gsap } from 'gsap';
-import { useAccount } from 'wagmi';
+import { useAccount, useChainId } from 'wagmi';
 import PollCard from './PollCard';
 import { usePolls } from '../hooks/usePolls';
+import { useSimplePoll } from '../hooks/useSimplePoll';
 import type { Poll } from '../types';
 
 interface PollDetailProps {
@@ -15,8 +16,21 @@ interface PollDetailProps {
 const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
   const detailRef = useRef<HTMLDivElement>(null);
   const { address } = useAccount();
+  const chainId = useChainId();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isVoting, setIsVoting] = useState(false);
+  const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
+  const [pendingVote, setPendingVote] = useState<number | null>(null);
+  
+  // Get blockchain voting info if it's a blockchain poll
+  const { entryFee, isVoting: isBlockchainVoting, hasUserVoted } = useSimplePoll(chainId);
+  
+  // Check if user has voted on this poll
+  const userHasVoted = poll?.userVote !== null && poll?.userVote !== undefined;
+  
+  console.log('🗿 User vote status for poll:', poll?.id);
+  console.log('🗿 Poll userVote field:', poll?.userVote);
+  console.log('🗿 User has voted:', userHasVoted);
 
   useEffect(() => {
     if (detailRef.current) {
@@ -36,18 +50,49 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
     }
   }, [poll]);
 
+  const handleVoteClick = (optionIndex: number) => {
+    if (!poll || !address || isVoting || isBlockchainVoting) return;
+    
+    // Check if user has already voted
+    if (userHasVoted) {
+      alert('You have already voted on this poll!');
+      return;
+    }
+    
+    if (poll.isBlockchain) {
+      // Show confirmation modal for blockchain polls
+      setPendingVote(optionIndex);
+      setShowVoteConfirmation(true);
+    } else {
+      // Direct vote for API polls
+      handleVote(optionIndex);
+    }
+  };
+  
   const handleVote = async (optionIndex: number) => {
-    if (!poll || !address || isVoting) return;
-
     setIsVoting(true);
     try {
       await onVote(poll.id, optionIndex);
       setSelectedOption(optionIndex);
+      setShowVoteConfirmation(false);
+      setPendingVote(null);
     } catch (error) {
       console.error('Failed to vote:', error);
+      alert(`Failed to vote: ${error.message || error}`);
     } finally {
       setIsVoting(false);
     }
+  };
+  
+  const confirmVote = () => {
+    if (pendingVote !== null) {
+      handleVote(pendingVote);
+    }
+  };
+  
+  const cancelVote = () => {
+    setShowVoteConfirmation(false);
+    setPendingVote(null);
   };
 
   if (!poll) {
@@ -166,23 +211,48 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
           <div className="container-custom">
             <div className="max-w-4xl mx-auto">
               <motion.h2 
-                className="text-2xl font-bold text-white mb-8 text-center"
+                className="text-2xl font-bold text-white mb-4 text-center"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.7 }}
               >
-                Cast Your Vote
+                {userHasVoted ? 'Your Vote' : 'Cast Your Vote'}
               </motion.h2>
+              
+              {userHasVoted && (
+                <motion.div
+                  className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 mb-6 text-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
+                  <div className="flex items-center justify-center space-x-2 text-green-400 mb-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span className="font-medium">You have already voted on this poll</span>
+                  </div>
+                  <p className="text-green-300 text-sm">
+                    Your vote has been recorded and cannot be changed.
+                  </p>
+                </motion.div>
+              )}
 
               <div className="space-y-4">
                 {options.map((option, index) => (
                   <motion.div
                     key={option.id}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 cursor-pointer"
+                    className={`bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all duration-300 ${
+                      userHasVoted 
+                        ? 'opacity-60 cursor-not-allowed' 
+                        : 'hover:bg-white/10 cursor-pointer'
+                    } ${
+                      poll?.userVote === index ? 'ring-2 ring-primary-500' : ''
+                    }`}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 + index * 0.1 }}
-                    onClick={() => handleVote(index)}
+                    onClick={() => !userHasVoted && handleVoteClick(index)}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-semibold text-white">{option.text}</h3>
@@ -203,14 +273,33 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-secondary-300">
-                        {option.percentage.toFixed(1)}% of total votes
-                      </span>
-                      {selectedOption === index && (
-                        <span className="text-primary-400 text-sm font-medium">
-                          ✓ Your vote
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-sm text-secondary-300">
+                          {option.percentage.toFixed(1)}% of total votes
                         </span>
-                      )}
+                        <div className="flex items-center space-x-2">
+                          {poll.isBlockchain && (
+                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full">
+                              {entryFee} BNB
+                            </span>
+                          )}
+                          {(selectedOption === index || poll?.userVote === index) && (
+                            <span className="text-primary-400 text-sm font-medium">
+                              ✓ Your vote
+                            </span>
+                          )}
+                          {userHasVoted && poll?.userVote !== index && (
+                            <span className="text-secondary-500 text-sm">
+                              Voting closed
+                            </span>
+                          )}
+                          {(isVoting || isBlockchainVoting) && (
+                            <span className="text-yellow-400 text-sm">
+                              Processing...
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </motion.div>
                 ))}
@@ -242,6 +331,63 @@ const PollDetail: React.FC<PollDetailProps> = ({ poll, onBack, onVote }) => {
           </div>
         </section>
       </div>
+      
+      {/* Vote Confirmation Modal */}
+      <AnimatePresence>
+        {showVoteConfirmation && pendingVote !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-secondary-800 border border-white/10 rounded-2xl p-6 max-w-md mx-4"
+            >
+              <h3 className="text-xl font-bold text-white mb-4">Confirm Your Vote</h3>
+              <div className="mb-6">
+                <p className="text-secondary-300 mb-4">
+                  You are about to vote for:
+                </p>
+                <div className="bg-white/5 rounded-lg p-3 mb-4">
+                  <span className="text-white font-medium">
+                    {options[pendingVote]?.text}
+                  </span>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
+                  <div className="flex items-center space-x-2 text-blue-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    <span className="font-medium">Cost: {entryFee} BNB</span>
+                  </div>
+                  <p className="text-blue-300 text-sm mt-2">
+                    This will deduct {entryFee} BNB from your wallet
+                  </p>
+                </div>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={cancelVote}
+                  className="flex-1 px-4 py-2 bg-white/5 border border-white/10 text-secondary-300 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmVote}
+                  disabled={isVoting || isBlockchainVoting}
+                  className="flex-1 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg hover:shadow-xl hover:shadow-primary-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {isVoting || isBlockchainVoting ? 'Processing...' : `Pay ${entryFee} BNB & Vote`}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
