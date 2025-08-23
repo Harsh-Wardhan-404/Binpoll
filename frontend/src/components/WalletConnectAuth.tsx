@@ -246,15 +246,19 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-hidden"
             onClick={() => setShowModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md w-full relative"
+              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative modal-scrollbar"
               onClick={(e) => e.stopPropagation()}
+              style={{ 
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+              }}
             >
               {/* Close Button */}
               <button
@@ -276,7 +280,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
               </div>
 
               {/* Connector List */}
-              <div className="space-y-3">
+              <div className="space-y-3 mb-6">
                 {connectors.map((connector) => (
                   <motion.button
                     key={connector.uid}
@@ -303,7 +307,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
               </div>
 
               {/* Authentication Info */}
-              <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+              <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <FaUser className="w-4 h-4 text-blue-400" />
                   <span className="text-sm font-medium text-blue-300">Authentication Process</span>
@@ -319,7 +323,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
               </div>
 
               {/* Network Info */}
-              <div className="mt-4 p-4 bg-primary-500/10 border border-primary-500/20 rounded-lg">
+              <div className="mb-4 p-4 bg-primary-500/10 border border-primary-500/20 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
                   <FaCheck className="w-4 h-4 text-primary-400" />
                   <span className="text-sm font-medium text-primary-300">Supported Networks</span>
@@ -331,7 +335,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
               </div>
 
               {/* Disclaimer */}
-              <div className="mt-6 text-center">
+              <div className="text-center">
                 <p className="text-xs text-secondary-400">
                   By connecting, you agree to our Terms of Service and Privacy Policy
                 </p>
