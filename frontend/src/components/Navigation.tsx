@@ -117,9 +117,9 @@ export const Navigation = () => {
             style={{ cursor: 'pointer' }}
           >
             <img 
-              src="/BinIT.svg" 
+              src="/BinIT.png" 
               alt="BinIT Logo" 
-              className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-contain rounded-lg shadow-lg"
+              className="w-18 h-18 sm:w-24 sm:h-24 lg:w-28 lg:h-28 object-contain rounded-lg shadow-lg"
             />
             {/* <span className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-gradient">
              BinIT

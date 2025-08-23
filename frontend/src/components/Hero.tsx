@@ -59,30 +59,30 @@ export const Hero = () => {
 
           {/* Minimal Main Title */}
           <div className="space-y-8">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight tracking-tight whitespace-nowrap">
+            <h1 className="text-2xl md:text-3xl lg:text-5xl font-display font-bold text-white leading-tight tracking-tight">
               <span className="text-gradient">BinIT</span> - Every Deposit Could Make You the Winner
             </h1>
             
-            <p className="text-xl md:text-2xl lg:text-3xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
-              <DecryptedText
-                text="System-Generated Pots • Hidden Capacities • Last Depositor Wins All • Instant New Rounds"
-                speed={80}
-                maxIterations={12}
-                characters="BINIT•░▒▓█"
-                className="font-mono font-bold text-primary-300"
-                animateOn="view"
-                revealDirection="center"
-              />
-            </p>
+                         <p className="text-xl md:text-2xl lg:text-3xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
+               <DecryptedText
+                 text="System-Generated Bin's • Hidden Capacities • Last Depositor Wins All • Instant New Rounds"
+                 speed={80}
+                 maxIterations={12}
+                 characters="BINIT•░▒▓█"
+                 className="font-mono font-bold text-primary-300"
+                 animateOn="view"
+                 revealDirection="center"
+               />
+             </p>
           </div>
 
           {/* Gambling Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              { title: "4 Mystery Pots", desc: "System-generated pots with hidden BNB capacities unknown to players" },
-              { title: "Last Depositor Wins", desc: "When a pot fills to capacity, the final depositor takes the entire pot" },
-              { title: "Instant New Rounds", desc: "Continuous gameplay with fresh pots generated after each win" }
-            ].map((item, index) => (
+                         {[
+               { title: "Mystery Bin's", desc: "System-generated bin's with hidden BNB capacities unknown to players" },
+               { title: "Last Depositor Wins", desc: "When a bin fills to capacity, the final depositor takes the entire bin" },
+               { title: "Instant New Rounds", desc: "Continuous gameplay with fresh bin's generated after each win" }
+             ].map((item, index) => (
               <motion.div 
                 key={item.title}
                 className="glass-effect p-6 rounded-2xl border border-primary-500/20 group cursor-pointer"
