@@ -29,20 +29,20 @@ export const HowItWorks = () => {
     {
       number: 2,
       icon: FiSearch,
-      title: "Browse Topics",
-      description: "Explore various topics and questions across different categories that interest you."
+      title: "Browse Polls",
+      description: "Explore various prediction polls across different categories that interest you."
     },
     {
       number: 3,
       icon: FiTrendingUp,
-      title: "Share Your Insights",
-      description: "Use your expertise to make informed decisions and share your valuable perspective."
+      title: "Place Your Bets",
+      description: "Use your insights to make predictions and place bets with dynamic multipliers."
     },
     {
       number: 4,
       icon: FiAward,
-      title: "Earn Recognition",
-      description: "Build your credibility and earn rewards when your insights prove valuable."
+      title: "Win Big Rewards",
+      description: "Hit jackpots, build winning streaks, and earn massive rewards when you're right."
     }
   ];
 
@@ -51,11 +51,11 @@ export const HowItWorks = () => {
       <div className="container-custom">
         <div className="text-center mb-20">
           <h2 className="how-title text-5xl md:text-6xl font-display font-bold mb-6">
-            How <span className="text-gradient">Knowledge Rewards</span> Work
+            How <span className="text-gradient">Prediction Gambling</span> Works
           </h2>
           <p className="text-xl text-secondary-300 max-w-3xl mx-auto">
-            Start sharing your expertise and earning recognition in just four simple steps.
-            Designed for both newcomers and experienced professionals.
+            Start predicting outcomes and winning big rewards in just four simple steps.
+            From beginners to high rollers, everyone can play and win.
           </p>
         </div>
 
@@ -91,7 +91,7 @@ export const HowItWorks = () => {
 
         <div className="text-center mt-20">
           <button className="btn-primary text-lg px-12 py-5 flex items-center space-x-3 mx-auto">
-            <span>Start Your Journey</span>
+            <span>Start Gambling Now</span>
             <FiArrowRight className="w-5 h-5" />
           </button>
         </div>

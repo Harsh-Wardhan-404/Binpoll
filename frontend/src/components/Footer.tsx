@@ -11,8 +11,8 @@ export const Footer = () => {
     {
       title: 'Platform',
       links: [
-        { label: 'Topics', href: '#topics' },
-        { label: 'Analytics', href: '#analytics' },
+        { label: 'Polls', href: '#polls' },
+        { label: 'Jackpots', href: '#jackpots' },
         { label: 'API', href: '#api' },
         { label: 'Roadmap', href: '#roadmap' }
       ]
@@ -20,8 +20,8 @@ export const Footer = () => {
     {
       title: 'Resources',
       links: [
-        { label: 'Documentation', href: '#docs' },
-        { label: 'Tutorials', href: '#tutorials' },
+        { label: 'How to Play', href: '#how-to-play' },
+        { label: 'Gambling Guide', href: '#gambling-guide' },
         { label: 'Blog', href: '#blog' },
         { label: 'Help Center', href: '#help' }
       ]
@@ -32,7 +32,7 @@ export const Footer = () => {
         { label: 'Discord', href: '#discord' },
         { label: 'Twitter', href: '#twitter' },
         { label: 'GitHub', href: '#github' },
-        { label: 'Forum', href: '#forum' }
+        { label: 'Leaderboards', href: '#leaderboards' }
       ]
     },
     {
@@ -40,7 +40,7 @@ export const Footer = () => {
       links: [
         { label: 'Terms of Service', href: '#terms' },
         { label: 'Privacy Policy', href: '#privacy' },
-        { label: 'Disclaimer', href: '#disclaimer' },
+        { label: 'Gambling Disclaimer', href: '#disclaimer' },
         { label: 'Licenses', href: '#licenses' }
       ]
     }
@@ -79,8 +79,8 @@ export const Footer = () => {
             </motion.div>
 
             <p className="text-secondary-400 mb-8 leading-relaxed max-w-md">
-              Empowering knowledge sharing and expertise recognition through blockchain technology. 
-              Join our community of experts and earn recognition for your insights.
+              The most exciting prediction gambling platform with progressive jackpots, streak bonuses, 
+              and dynamic multipliers. Turn your insights into massive rewards on BNB Chain.
             </p>
 
             {/* Social links */}
@@ -130,15 +130,15 @@ export const Footer = () => {
         {/* Bottom section */}
         <div className="border-t border-secondary-800 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-secondary-500 text-sm">
-            © 2024 Binpoll. Built with ❤️ for knowledge sharing and expertise recognition.
+            © 2024 Binpoll. Built with ❤️ for exciting prediction gambling and massive rewards.
           </div>
 
           <div className="flex items-center space-x-6 text-sm text-secondary-500">
             <span>Powered by BNB Chain</span>
             <div className="w-1 h-1 bg-secondary-500 rounded-full"></div>
-            <span>Credibility Based</span>
+            <span>Progressive Jackpots</span>
             <div className="w-1 h-1 bg-secondary-500 rounded-full"></div>
-            <span>Expert Community</span>
+            <span>Streak Bonuses</span>
           </div>
         </div>
       </div>

@@ -110,60 +110,60 @@ export const Features = () => {
 
   const features = [
     {
-      icon: FiShield,
-      title: "Credibility Based",
-      description: "Your expertise and track record determine your voting weight and influence.",
-      color: "text-blue-400",
-      bg: "from-blue-400/10 to-blue-600/5"
-    },
-    {
-      icon: FiZap,
-      title: "Instant Recognition",
-      description: "Get immediate feedback and rewards for your valuable insights and decisions.",
+      icon: FiTrendingUp,
+      title: "Dynamic Multipliers",
+      description: "Starting at 1.0x, multipliers increase by 0.1x for every 10 BNB bet. Underdog options get 1.2x-2.0x bonuses!",
       color: "text-primary-400",
       bg: "from-primary-400/10 to-primary-600/5"
     },
     {
-      icon: FiTrendingUp,
-      title: "Knowledge Analytics",
-      description: "Track your expertise growth and see how your insights impact outcomes.",
+      icon: FiZap,
+      title: "Progressive Jackpots",
+      description: "Each poll starts with 0.1 BNB seed. Hit 50x mega jackpots with 5% chance per 100 votes!",
+      color: "text-yellow-400",
+      bg: "from-yellow-400/10 to-yellow-600/5"
+    },
+    {
+      icon: FiAward,
+      title: "Streak Bonuses",
+      description: "3 wins = 1.2x, 5 wins = 1.5x, 10 wins = 2.0x, 20+ wins = 5.0x legendary multiplier!",
       color: "text-green-400",
       bg: "from-green-400/10 to-green-600/5"
     },
     {
-      icon: FiUsers,
-      title: "Expert Community",
-      description: "Connect with knowledgeable individuals who value informed decision-making.",
+      icon: FiBarChart2,
+      title: "Combo Rewards",
+      description: "Daily combos (3 wins) = 2x bonus, Perfect Day (all wins in 24h) = 10x bonus!",
       color: "text-purple-400",
       bg: "from-purple-400/10 to-purple-600/5"
     },
     {
-      icon: FiLock,
-      title: "Privacy Protected",
-      description: "Your personal insights and voting patterns remain confidential and secure.",
+      icon: FiShield,
+      title: "Volatility System",
+      description: "0.8x to 1.5x base volatility. Whale bets (>10 BNB) trigger 2x volatility!",
       color: "text-orange-400",
       bg: "from-orange-400/10 to-orange-600/5"
     },
     {
-      icon: FiBarChart2,
-      title: "Insight Analytics",
-      description: "Detailed analytics to help you understand and improve your decision-making skills.",
+      icon: FiUsers,
+      title: "Early Bird Bonuses",
+      description: "First 10 voters get 1.2x multiplier. Last 5 minutes get 1.5x rush bonus!",
       color: "text-cyan-400",
       bg: "from-cyan-400/10 to-cyan-600/5"
     },
     {
-      icon: FiGlobe,
-      title: "Diverse Topics",
-      description: "Share your expertise across technology, politics, sports, and more categories.",
+      icon: FiLock,
+      title: "Streak Protection",
+      description: "Pay 0.01 BNB to protect your streak from 1 loss. Insurance for your winning run!",
       color: "text-pink-400",
       bg: "from-pink-400/10 to-pink-600/5"
     },
     {
-      icon: FiAward,
-      title: "Recognition System",
-      description: "Build your reputation and earn recognition for your valuable insights.",
-      color: "text-primary-400",
-      bg: "from-primary-400/10 to-primary-600/5"
+      icon: FiGlobe,
+      title: "Real-time Updates",
+      description: "Multipliers change every block. Time decay creates urgency - 0.05x decrease per hour!",
+      color: "text-blue-400",
+      bg: "from-blue-400/10 to-blue-600/5"
     }
   ];
 
@@ -185,10 +185,10 @@ export const Features = () => {
         
         <div className="relative z-10 text-center">
           <h2 className="text-4xl md:text-6xl font-display font-bold text-white mb-8">
-            <span className="text-gradient">Share Your Knowledge</span>
+            <span className="text-gradient">Advanced Gambling Features</span>
           </h2>
-          <p className="text-xl text-secondary-300 max-w-2xl mx-auto">
-            Turn your expertise into rewards through informed community decisions
+          <p className="text-xl text-secondary-300 max-w-3xl mx-auto">
+            Experience the most sophisticated prediction and gambling platform with real-time odds, progressive jackpots, and streak bonuses
           </p>
         </div>
       </section>
@@ -203,10 +203,11 @@ export const Features = () => {
         <div className="container-custom relative z-10">
           <div className="text-center mb-20">
             <h2 className="feature-title text-5xl md:text-6xl font-display font-bold mb-6 overflow-hidden">
-              <span className="text-gradient">Knowledge-Based Platform</span>
+              <span className="text-gradient">Gambling Mechanics</span>
             </h2>
-            <p className="text-xl text-secondary-300 max-w-3xl mx-auto leading-relaxed">
-              A platform where your expertise and informed decisions are valued and rewarded.
+            <p className="text-xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
+              Our platform combines advanced gambling psychology with blockchain technology to create the most engaging prediction experience. 
+              From dynamic multipliers to progressive jackpots, every feature is designed to maximize excitement and rewards.
             </p>
           </div>
 
@@ -243,7 +244,7 @@ export const Features = () => {
 
           <div className="text-center">
             <button className="btn-primary text-lg px-12 py-6 relative group overflow-hidden">
-              <span className="relative z-10">Explore All Features</span>
+              <span className="relative z-10">Start Gambling Now</span>
               <div className="absolute inset-0 bg-gradient-to-r from-primary-400 to-primary-600 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
             </button>
           </div>

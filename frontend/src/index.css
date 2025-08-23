@@ -52,7 +52,35 @@
   }
   
   .container-custom {
-    @apply max-w-7xl mx-auto px-6 sm:px-8;
+    @apply max-w-7xl mx-auto px-8 sm:px-12 lg:px-16;
+  }
+  
+  /* Navbar specific styles */
+  .navbar-spacing {
+    @apply space-x-6 lg:space-x-8;
+  }
+  
+  .navbar-button {
+    @apply px-6 py-3 rounded-xl transition-all duration-300 font-semibold;
+  }
+  
+  .navbar-button-primary {
+    @apply bg-primary-500 text-secondary-900 shadow-lg shadow-primary-500/25 hover:shadow-xl hover:shadow-primary-500/30;
+  }
+  
+  .navbar-button-secondary {
+    @apply text-secondary-300 hover:text-primary-400 hover:bg-white/10 border border-white/20 hover:border-primary-500/30;
+  }
+  
+  /* Hero title sizing */
+  .hero-title-xl {
+    font-size: clamp(3rem, 8vw, 8rem);
+    line-height: 0.9;
+  }
+  
+  .hero-title-2xl {
+    font-size: clamp(4rem, 10vw, 10rem);
+    line-height: 0.85;
   }
 }
 

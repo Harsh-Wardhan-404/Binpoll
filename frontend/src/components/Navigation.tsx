@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiMenu, HiX } from 'react-icons/hi';
-import { FaWallet } from 'react-icons/fa';
+import { FaWallet, FaUser } from 'react-icons/fa';
 import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
 import { gsap } from 'gsap';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -28,8 +28,7 @@ export const Navigation = () => {
   }, []);
 
   const navItems = currentPage === 'home' ? [
-    { label: 'Features', href: '#features' },
-    { label: 'How it Works', href: '#how-it-works' },
+   
   ] : currentPage === 'profile' ? [
     { label: 'My Stats', href: '#stats' },
     { label: 'Activity', href: '#activity' },
@@ -65,35 +64,35 @@ export const Navigation = () => {
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled 
           ? 'glass-effect border-b border-primary-500/20' 
-          : 'bg-transparent'
+          : 'bg-black/20 backdrop-blur-sm border-b border-white/10'
       }`}
     >
       <div className="container-custom">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+        <div className="flex items-center justify-between h-20 sm:h-22 lg:h-24">
+          {/* Logo - Left Section */}
           <motion.div 
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 sm:space-x-3"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate('/')}
             style={{ cursor: 'pointer' }}
           >
-            <div className="w-10 h-10 bg-golden-gradient rounded-lg flex items-center justify-center">
-              <FiTrendingUp className="w-6 h-6 text-secondary-900" />
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-golden-gradient rounded-xl flex items-center justify-center shadow-lg">
+              <FiTrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-secondary-900" />
             </div>
-            <span className="text-2xl font-display font-bold text-gradient">
+            <span className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-gradient">
               Binpoll
             </span>
           </motion.div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation - Center Section */}
           {(currentPage === 'home' || currentPage === 'profile') && (
-            <div className="hidden md:flex items-center space-x-8">
+            <div className="hidden lg:flex items-center space-x-12">
               {navItems.map((item, index) => (
                 <motion.a
                   key={item.label}
                   href={item.href}
-                  className="text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
+                  className="text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium text-lg"
                   whileHover={{ y: -2 }}
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -105,44 +104,46 @@ export const Navigation = () => {
             </div>
           )}
 
-          {/* Desktop Action Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
+          {/* Desktop Action Buttons - Right Section */}
+          <div className="hidden lg:flex items-center navbar-spacing">
             {/* Navigation Buttons */}
             <motion.button
-              onClick={() => navigate('/')}
-              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${
-                currentPage === 'home'
-                  ? 'bg-primary-500 text-secondary-900'
-                  : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
-              }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FiHome className="w-4 h-4" />
-              <span>Home</span>
-            </motion.button>
-
-            <motion.button
               onClick={() => navigate('/dashboard')}
-              className={`px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2 ${
+              className={`navbar-button flex items-center space-x-3 ${
                 currentPage === 'dashboard'
-                  ? 'bg-primary-500 text-secondary-900'
-                  : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+                  ? 'navbar-button-primary'
+                  : 'navbar-button-secondary'
               }`}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
-              <FiBarChart2 className="w-4 h-4" />
+              <FiBarChart2 className="w-5 h-5" />
               <span>Dashboard</span>
             </motion.button>
 
-            {/* Wallet Connect */}
-            <WalletConnectAuth />
+            <motion.button
+              onClick={() => navigate('/profile')}
+              className={`navbar-button flex items-center space-x-3 ${
+                currentPage === 'profile'
+                  ? 'navbar-button-primary'
+                  : 'navbar-button-secondary'
+              }`}
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FaUser className="w-5 h-5" />
+              <span>Profile</span>
+            </motion.button>
+
+            {/* Wallet Connect with better spacing */}
+            <div className="ml-6">
+              <WalletConnectAuth />
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden p-2 text-secondary-300 hover:text-primary-400 transition-colors"
+            className="lg:hidden p-2 sm:p-3 text-secondary-300 hover:text-primary-400 transition-colors rounded-lg hover:bg-white/10"
             onClick={() => setIsOpen(!isOpen)}
             whileTap={{ scale: 0.95 }}
           >
@@ -155,7 +156,7 @@ export const Navigation = () => {
                   exit={{ rotate: 90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <HiX className="w-6 h-6" />
+                  <HiX className="w-6 h-6 sm:w-7 sm:h-7" />
                 </motion.div>
               ) : (
                 <motion.div
@@ -165,7 +166,7 @@ export const Navigation = () => {
                   exit={{ rotate: -90, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <HiMenu className="w-6 h-6" />
+                  <HiMenu className="w-6 h-6 sm:w-7 sm:h-7" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -180,15 +181,15 @@ export const Navigation = () => {
               initial="closed"
               animate="open"
               exit="closed"
-              className="md:hidden overflow-hidden"
+              className="lg:hidden overflow-hidden"
             >
-              <div className="py-6 space-y-4">
+              <div className="py-8 space-y-6">
                 {/* Mobile Navigation Items */}
                 {navItems.map((item, index) => (
                   <motion.a
                     key={item.label}
                     href={item.href}
-                    className="block text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium"
+                    className="block text-secondary-200 hover:text-primary-400 transition-colors duration-300 font-medium text-lg py-2"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
@@ -199,43 +200,43 @@ export const Navigation = () => {
                 ))}
 
                 {/* Mobile Action Buttons */}
-                <div className="pt-4 space-y-3 border-t border-secondary-800">
-                  <motion.button
-                    onClick={() => {
-                      navigate('/');
-                      setIsOpen(false);
-                    }}
-                    className={`w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
-                      currentPage === 'home'
-                        ? 'bg-primary-500 text-secondary-900'
-                        : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <FiHome className="w-4 h-4" />
-                    <span>Home</span>
-                  </motion.button>
-
+                <div className="pt-6 space-y-4 border-t border-secondary-800">
                   <motion.button
                     onClick={() => {
                       navigate('/dashboard');
                       setIsOpen(false);
                     }}
-                    className={`w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
+                    className={`w-full navbar-button flex items-center justify-center space-x-3 ${
                       currentPage === 'dashboard'
-                        ? 'bg-primary-500 text-secondary-900'
-                        : 'text-secondary-300 hover:text-primary-400 hover:bg-white/5'
+                        ? 'navbar-button-primary'
+                        : 'navbar-button-secondary'
                     }`}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <FiBarChart2 className="w-4 h-4" />
+                    <FiBarChart2 className="w-5 h-5" />
                     <span>Dashboard</span>
                   </motion.button>
 
+                  <motion.button
+                    onClick={() => {
+                      navigate('/profile');
+                      setIsOpen(false);
+                    }}
+                    className={`w-full navbar-button flex items-center justify-center space-x-3 ${
+                      currentPage === 'profile'
+                        ? 'navbar-button-primary'
+                        : 'navbar-button-secondary'
+                    }`}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <FaUser className="w-5 h-5" />
+                    <span>Profile</span>
+                  </motion.button>
+
                   {/* Mobile Wallet Connect */}
-                  <div className="pt-2">
+                  <div className="pt-4">
                     <WalletConnectAuth />
                   </div>
                 </div>

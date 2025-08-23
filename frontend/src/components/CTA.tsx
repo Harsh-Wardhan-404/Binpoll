@@ -101,47 +101,47 @@ export const CTA = () => {
 
       <div className="container-custom text-center max-w-4xl mx-auto relative z-10">
         <div className="cta-title mb-12">
-          <h2 className="text-5xl md:text-7xl font-display font-bold mb-8 leading-tight">
-            Turn Your Knowledge Into{' '}
-            <span className="text-gradient">Recognition & Rewards</span>
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-8 ">
+            Turn Your Predictions Into{' '}
+            <span className="text-gradient">Massive Rewards & Jackpots</span>
           </h2>
 
           <p className="text-xl md:text-2xl text-secondary-300 mb-12 leading-relaxed max-w-3xl mx-auto">
-            Join a community of experts who value informed decision-making and share your insights 
-            to earn recognition and rewards for your expertise.
+            Join the most exciting prediction gambling platform where your insights can win you 
+            progressive jackpots, streak bonuses, and massive multipliers.
           </p>
         </div>
 
-        <div className="cta-buttons flex flex-col sm:flex-row gap-8 justify-center items-center mb-20" style={{ perspective: '1000px' }}>
+        <div className="cta-buttons flex flex-col sm:flex-row gap-6 justify-center items-center mb-20" style={{ perspective: '1000px' }}>
           <MagneticButton 
-            className="btn-primary text-xl px-14 py-7 flex items-center space-x-4 group relative overflow-hidden"
+            className="bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-bold text-lg px-8 py-4 rounded-xl flex items-center space-x-3 group relative overflow-hidden shadow-xl shadow-primary-500/25 hover:shadow-primary-500/40 transition-all duration-300 hover:scale-105"
             strength={0.4}
           >
-            <FiTrendingUp className="w-6 h-6 group-hover:rotate-12 transition-transform duration-300" />
-            <span>Launch App</span>
-            <FiArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
+            {/* <FiTrendingUp className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" /> */}
+            <span>Start Gambling</span>
+            {/* <FiArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" /> */}
             
             {/* Button glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary-400/20 via-primary-500/40 to-primary-400/20 rounded-full opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-primary-400/20 via-primary-500/40 to-primary-400/20 rounded-xl opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500"></div>
           </MagneticButton>
 
           <MagneticButton 
-            className="btn-secondary text-xl px-14 py-7 group relative overflow-hidden"
+            className="bg-white/5 border-2 border-white/20 text-white font-semibold text-lg px-8 py-4 rounded-xl group relative overflow-hidden hover:bg-white/10 hover:border-primary-500/40 transition-all duration-300 hover:scale-105"
             strength={0.3}
           >
-            <span className="group-hover:text-primary-400 transition-colors duration-300">View Documentation</span>
+            <span className="group-hover:text-primary-400 transition-colors duration-300">Learn How to Play</span>
             
             {/* Border glow effect */}
-            <div className="absolute inset-0 rounded-full border-2 border-primary-500/30 group-hover:border-primary-400/60 transition-colors duration-300"></div>
+            {/* <div className="absolute inset-0 rounded-xl border-2 border-primary-500/30 group-hover:border-primary-400/60 transition-colors duration-300"></div> */}
           </MagneticButton>
         </div>
 
         <div className="trust-indicators grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
           {[
-            { value: "100%", label: "Open Source", color: "text-green-400" },
-            { value: "24/7", label: "Uptime", color: "text-blue-400" },
-            { value: "0%", label: "Platform Fees", color: "text-primary-400" },
-            { value: "∞", label: "Possibilities", color: "text-purple-400" }
+            { value: "50x", label: "Max Jackpot", color: "text-yellow-400" },
+            { value: "5.0x", label: "Streak Bonus", color: "text-green-400" },
+            { value: "2.0x", label: "Underdog Bonus", color: "text-primary-400" },
+            { value: "10x", label: "Perfect Day", color: "text-purple-400" }
           ].map((item) => (
             <div key={item.label} className="trust-item text-center group cursor-pointer">
               <div className={`text-3xl md:text-4xl font-bold ${item.color} mb-3 group-hover:scale-110 transition-all duration-300 group-hover:drop-shadow-lg`}>

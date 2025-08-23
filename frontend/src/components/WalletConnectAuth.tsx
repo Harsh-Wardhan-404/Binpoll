@@ -5,6 +5,7 @@ import { bscTestnet, hardhat } from 'wagmi/chains';
 import { FaWallet, FaCheck, FaExclamationTriangle, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { HiX, HiExternalLink } from 'react-icons/hi';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 interface WalletConnectAuthProps {
   className?: string;
@@ -16,6 +17,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
+  const navigate = useNavigate();
   
   const { isAuthenticated, user, authenticate, logout, isLoading } = useAuth();
   
@@ -70,13 +72,13 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
   // Show authenticated state
   if (isConnected && isAuthenticated && user) {
     return (
-      <div className={`flex items-center space-x-3 ${className}`}>
+      <div className={`flex items-center space-x-4 ${className}`}>
         {/* Network Status */}
         {!isCorrectNetwork && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center space-x-2 px-3 py-2 bg-red-500/20 border border-red-500/30 rounded-lg"
+            className="flex items-center space-x-2 px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg"
           >
             <FaExclamationTriangle className="text-red-400 text-sm" />
             <span className="text-red-300 text-sm font-medium">Wrong Network</span>
@@ -87,7 +89,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
         <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
           <motion.button
             onClick={() => handleNetworkSwitch(bscTestnet)}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               chainId === bscTestnet.id
                 ? 'bg-primary-500 text-secondary-900'
                 : 'text-secondary-300 hover:text-white hover:bg-white/10'
@@ -99,7 +101,7 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
           </motion.button>
           <motion.button
             onClick={() => handleNetworkSwitch(hardhat)}
-            className={`px-3 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               chainId === hardhat.id
                 ? 'bg-primary-500 text-secondary-900'
                 : 'text-secondary-300 hover:text-white hover:bg-white/10'
@@ -113,29 +115,69 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
 
         {/* User Info */}
         <motion.div
-          className="flex items-center space-x-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2"
+          className="flex items-center space-x-4 bg-white/5 border border-white/10 rounded-lg px-5 py-3"
           whileHover={{ scale: 1.02, backgroundColor: 'rgba(255,255,255,0.1)' }}
         >
-          <div className="flex items-center space-x-2">
+          <motion.button 
+            className="flex items-center space-x-3 cursor-pointer hover:bg-white/10 rounded-lg px-3 py-2 transition-colors border border-transparent hover:border-white/20 relative group focus:outline-none focus:ring-2 focus:ring-primary-500/50 bg-gradient-to-r from-transparent to-transparent hover:from-primary-500/10 hover:to-primary-500/5"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🖱️ Avatar clicked! Navigating to profile...');
+              console.log('📍 Current location:', window.location.pathname);
+              console.log('🧭 Navigate function:', typeof navigate);
+              try {
+                navigate('/profile');
+                console.log('✅ Navigation called successfully');
+              } catch (error) {
+                console.error('❌ Navigation error:', error);
+              }
+            }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Click to view profile"
+            type="button"
+          >
+            {/* Click indicator */}
+            <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/10 rounded-lg transition-colors pointer-events-none"></div>
+            
             <img 
               src={user.avatarUrl} 
               alt={user.username}
-              className="w-6 h-6 rounded-full"
+              className="w-8 h-8 rounded-full relative z-10"
             />
-            <div className="flex flex-col">
+            <div className="flex flex-col relative z-10">
               <span className="text-sm font-medium text-white">{user.username}</span>
               <span className="text-xs text-secondary-400">{truncateAddress(user.walletAddress)}</span>
             </div>
-          </div>
+            
+            {/* Profile icon indicator */}
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          </motion.button>
+          
+          {/* Test Profile Button */}
+          <button
+            onClick={() => {
+              console.log('🧪 Test profile button clicked!');
+              navigate('/profile');
+            }}
+            className="px-3 py-2 text-sm bg-primary-500 text-secondary-900 rounded-lg hover:bg-primary-600 transition-colors font-medium"
+            title="Test Profile Navigation"
+          >
+            Profile
+          </button>
+          
           <button
             onClick={copyAddress}
-            className="text-secondary-300 hover:text-primary-400 transition-colors"
+            className="text-secondary-300 hover:text-primary-400 transition-colors p-2 hover:bg-white/10 rounded-lg"
+            title="Copy Address"
           >
             <FaUser className="w-4 h-4" />
           </button>
           <button
             onClick={handleLogout}
-            className="text-secondary-400 hover:text-red-400 transition-colors"
+            className="text-secondary-400 hover:text-red-400 transition-colors p-2 hover:bg-white/10 rounded-lg"
+            title="Logout"
           >
             <FaSignOutAlt className="w-4 h-4" />
           </button>
@@ -147,34 +189,34 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
   // Show connected but not authenticated state
   if (isConnected && !isAuthenticated) {
     return (
-      <div className={`flex items-center space-x-3 ${className}`}>
+      <div className={`flex items-center space-x-4 ${className}`}>
         <motion.button
           onClick={handleAuthenticate}
           disabled={isAuthenticating}
-          className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/25 disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 disabled:opacity-50 text-sm"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          <FaUser className="w-4 h-4" />
+          <FaUser className="w-3 h-3" />
           <span>{isAuthenticating ? 'Authenticating...' : 'Sign Message'}</span>
         </motion.button>
         
         <motion.div
-          className="flex items-center space-x-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2"
+          className="flex items-center space-x-4 bg-white/5 border border-white/10 rounded-lg px-5 py-3"
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
             <span className="text-sm text-secondary-300">Connected to {currentNetwork}</span>
           </div>
           <button
             onClick={copyAddress}
-            className="text-white font-mono text-sm hover:text-primary-400 transition-colors"
+            className="text-white font-mono text-sm hover:text-primary-400 transition-colors px-3 py-1 hover:bg-white/10 rounded-lg"
           >
             {truncateAddress(address || '')}
           </button>
           <button
             onClick={() => disconnect()}
-            className="text-secondary-400 hover:text-red-400 transition-colors"
+            className="text-secondary-400 hover:text-red-400 transition-colors p-2 hover:bg-white/10 rounded-lg"
           >
             <HiX className="w-4 h-4" />
           </button>
@@ -188,12 +230,12 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
     <>
       <motion.button
         onClick={() => setShowModal(true)}
-        className={`flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-semibold rounded-lg transition-all duration-300 hover:shadow-xl hover:shadow-primary-500/25 ${className}`}
+        className={`flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 text-sm ${className}`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         disabled={isPending}
       >
-        <FaWallet className="w-5 h-5" />
+        <FaWallet className="w-4 h-4" />
         <span>{isPending ? 'Connecting...' : 'Connect Wallet'}</span>
       </motion.button>
 

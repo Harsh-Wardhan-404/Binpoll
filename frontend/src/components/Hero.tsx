@@ -50,7 +50,7 @@ export const Hero = () => {
       {/* Subtle overlay to ensure text readability */}
       <div className="absolute inset-0 bg-black/20"></div>
 
-      <div className="container-custom relative z-20 text-center max-w-4xl mx-auto">
+      <div className="container-custom relative z-20 text-center max-w-7xl mx-auto">
         <div className="hero-content space-y-12">
           
           {/* Security Badge */}
@@ -58,17 +58,17 @@ export const Hero = () => {
 
 
           {/* Minimal Main Title */}
-          <div className="space-y-6">
-            <h1 className="text-4xl md:text-6xl font-display font-bold text-white leading-tight">
-              Earn Through <span className="text-gradient">Knowledge & Insight</span>
+          <div className="space-y-8">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight tracking-tight whitespace-nowrap">
+              <span className="text-gradient">Binpoll</span> - Where Predictions Pay Off
             </h1>
             
-            <p className="text-xl md:text-2xl text-secondary-300 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl lg:text-3xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
               <DecryptedText
-                text="Share Your Expertise • Make Informed Decisions • Build Credibility"
+                text="Smart Betting • Bigger Rewards • Progressive Jackpots • Streak Bonuses"
                 speed={80}
                 maxIterations={12}
-                characters="EXPERTISE•░▒▓█"
+                characters="SMART•░▒▓█"
                 className="font-mono font-bold text-primary-300"
                 animateOn="view"
                 revealDirection="center"
@@ -76,12 +76,12 @@ export const Hero = () => {
             </p>
           </div>
 
-          {/* Security Features */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+          {/* Gambling Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
-              { title: "Protected", desc: "Smart contract security" },
-              { title: "Private", desc: "Your data stays yours" },
-              { title: "Proven", desc: "Battle-tested technology" }
+              { title: "Dynamic Multipliers", desc: "Real-time odds that change with betting volume" },
+              { title: "Progressive Jackpots", desc: "Hit 50x mega jackpots on high engagement polls" },
+              { title: "Streak Bonuses", desc: "5.0x rewards for legendary 20+ win streaks" }
             ].map((item, index) => (
               <motion.div 
                 key={item.title}
@@ -97,7 +97,7 @@ export const Hero = () => {
                     text={item.title}
                     speed={100}
                     maxIterations={8}
-                    characters="PROTECTED01"
+                    characters="MULTIPLIERS01"
                     className="font-bold"
                     animateOn="hover"
                   />
@@ -145,10 +145,10 @@ export const Hero = () => {
           {/* Scroll hint */}
           <div className="absolute top-16 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
             <DecryptedText
-              text="EXPLORE FEATURES"
+              text="EXPLORE GAMBLING FEATURES"
               speed={120}
               maxIterations={6}
-              characters="↓EXPLORE░▒▓█"
+              characters="↓GAMBLING░▒▓█"
               className="text-xs text-primary-400/70 font-mono font-bold tracking-widest"
               animateOn="view"
               revealDirection="center"

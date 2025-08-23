@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { useSmoothScroll } from './hooks/useSmoothScroll';
 import { Navigation } from './components/Navigation';
 import { Hero } from './components/Hero';
-import { InteractiveSection } from './components/InteractiveSection';
 import { Features } from './components/Features';
 import { HowItWorks } from './components/HowItWorks';
+import { Footer } from './components/Footer';
+import Galaxy from './components/Galaxy';
 import { Stats } from './components/Stats';
 import { CTA } from './components/CTA';
-import { Footer } from './components/Footer';
 import Dashboard from './components/Dashboard';
 import Profile from './components/Profile';
 import PollDetailPage from './components/PollDetailPage';
@@ -127,7 +127,6 @@ function App() {
             <>
               <main>
                 <Hero />
-                <InteractiveSection />
                 <Features />
                 <HowItWorks />
                 <Stats />

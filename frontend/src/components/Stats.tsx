@@ -21,27 +21,27 @@ export const Stats = () => {
   const stats = [
     {
       icon: FiTrendingUp,
-      value: '10K+',
-      label: 'Expert Insights',
-      description: 'Valuable decisions shared'
+      value: '50x',
+      label: 'Mega Jackpot',
+      description: 'Maximum jackpot multiplier'
     },
     {
       icon: FiUsers,
-      value: '5K+',
-      label: 'Knowledge Contributors',
-      description: 'Active community members'
+      value: '5.0x',
+      label: 'Legendary Streak',
+      description: 'Reward for 20+ wins'
     },
     {
       icon: FiShield,
-      value: '95%',
-      label: 'Credibility Score',
-      description: 'Average user expertise level'
+      value: '2.0x',
+      label: 'Underdog Bonus',
+      description: 'For unpopular options'
     },
     {
       icon: FiZap,
-      value: '25K+',
-      label: 'Global Experts',
-      description: 'From 50+ countries'
+      value: '10x',
+      label: 'Perfect Day',
+      description: 'Win all polls in 24h'
     }
   ];
 
@@ -50,10 +50,10 @@ export const Stats = () => {
       <div className="container-custom">
         <div className="text-center mb-16">
           <h2 className="stats-title text-5xl md:text-6xl font-display font-bold mb-6">
-            <span className="text-gradient">Community Impact</span>
+            <span className="text-gradient">Gambling Rewards</span>
           </h2>
           <p className="text-xl text-secondary-300 max-w-3xl mx-auto">
-            Join thousands of experts who share their knowledge and earn recognition for their insights.
+            Experience the most rewarding prediction platform with massive multipliers and progressive jackpots.
           </p>
         </div>
 
