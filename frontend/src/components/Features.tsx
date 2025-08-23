@@ -110,62 +110,62 @@ export const Features = () => {
 
   const features = [
     {
-      icon: FiTrendingUp,
-      title: "Dynamic Multipliers",
-      description: "Starting at 1.0x, multipliers increase by 0.1x for every 10 BNB bet. Underdog options get 1.2x-2.0x bonuses!",
+      icon: FiShield,
+      title: "4 Mystery Pots",
+      description: "System-generated pots with hidden capacities",
       color: "text-primary-400",
       bg: "from-primary-400/10 to-primary-600/5"
     },
     {
       icon: FiZap,
-      title: "Progressive Jackpots",
-      description: "Each poll starts with 0.1 BNB seed. Hit 50x mega jackpots with 5% chance per 100 votes!",
+      title: "Hidden Capacities",
+      description: "Secret BNB limits for each pot",
       color: "text-yellow-400",
       bg: "from-yellow-400/10 to-yellow-600/5"
     },
     {
       icon: FiAward,
-      title: "Streak Bonuses",
-      description: "3 wins = 1.2x, 5 wins = 1.5x, 10 wins = 2.0x, 20+ wins = 5.0x legendary multiplier!",
+      title: "Last Depositor Wins",
+      description: "Final depositor takes the entire pot",
       color: "text-green-400",
       bg: "from-green-400/10 to-green-600/5"
     },
     {
       icon: FiBarChart2,
-      title: "Combo Rewards",
-      description: "Daily combos (3 wins) = 2x bonus, Perfect Day (all wins in 24h) = 10x bonus!",
+      title: "Instant New Rounds",
+      description: "Continuous gameplay with fresh pots",
       color: "text-purple-400",
-      bg: "from-purple-400/10 to-purple-600/5"
+      bg: "from-purple-400/10 to-primary-600/5"
     },
     {
-      icon: FiShield,
-      title: "Volatility System",
-      description: "0.8x to 1.5x base volatility. Whale bets (>10 BNB) trigger 2x volatility!",
+      icon: FiTrendingUp,
+      title: "Strategic Deposits",
+      description: "Users choose amounts and pots strategically",
       color: "text-orange-400",
       bg: "from-orange-400/10 to-orange-600/5"
     },
     {
       icon: FiUsers,
-      title: "Early Bird Bonuses",
-      description: "First 10 voters get 1.2x multiplier. Last 5 minutes get 1.5x rush bonus!",
+      title: "Fair & Transparent",
+      description: "System-generated, no gaming possible",
       color: "text-cyan-400",
       bg: "from-cyan-400/10 to-cyan-600/5"
     },
     {
       icon: FiLock,
-      title: "Streak Protection",
-      description: "Pay 0.01 BNB to protect your streak from 1 loss. Insurance for your winning run!",
+      title: "Smart Contract Security",
+      description: "Automated, immutable operations",
       color: "text-pink-400",
       bg: "from-pink-400/10 to-pink-600/5"
     },
     {
       icon: FiGlobe,
       title: "Real-time Updates",
-      description: "Multipliers change every block. Time decay creates urgency - 0.05x decrease per hour!",
+      description: "Watch pots fill in real-time",
       color: "text-blue-400",
       bg: "from-blue-400/10 to-blue-600/5"
     }
-  ];
+  ]; 
 
   return (
     <>

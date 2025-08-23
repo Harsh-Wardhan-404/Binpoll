@@ -65,7 +65,7 @@ export const Hero = () => {
             
                          <p className="text-xl md:text-2xl lg:text-3xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
                <DecryptedText
-                 text="System-Generated Bin's • Hidden Capacities • Last Depositor Wins All • Instant New Rounds"
+                 text="System-Generated Bin's • Hidden Capacities • Last Depositor Wins All"
                  speed={80}
                  maxIterations={12}
                  characters="BINIT•░▒▓█"
@@ -79,7 +79,7 @@ export const Hero = () => {
           {/* Gambling Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
                          {[
-               { title: "Mystery Bin's", desc: "System-generated bin's with hidden BNB capacities unknown to players" },
+               { title: "Mystery Bins", desc: "System-generated bins with hidden BNB capacities unknown to players" },
                { title: "Last Depositor Wins", desc: "When a bin fills to capacity, the final depositor takes the entire bin" },
                { title: "Instant New Rounds", desc: "Continuous gameplay with fresh bin's generated after each win" }
              ].map((item, index) => (
