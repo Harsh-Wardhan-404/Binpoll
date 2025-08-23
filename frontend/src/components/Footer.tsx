@@ -74,7 +74,7 @@ export const Footer = () => {
                 <FiTrendingUp className="w-7 h-7 text-secondary-900" />
               </div>
               <span className="text-3xl font-display font-bold text-gradient">
-                Binpoll
+                BinIT
               </span>
             </motion.div>
 
@@ -130,7 +130,7 @@ export const Footer = () => {
         {/* Bottom section */}
         <div className="border-t border-secondary-800 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-secondary-500 text-sm">
-            © 2024 Binpoll. Built with ❤️ for exciting prediction gambling and massive rewards.
+            © 2024 BinIT. Built with ❤️ for exciting prediction gambling and massive rewards.
           </div>
 
           <div className="flex items-center space-x-6 text-sm text-secondary-500">

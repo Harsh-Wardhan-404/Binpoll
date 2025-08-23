@@ -130,14 +130,14 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ className = '' }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed top-2 inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-20" 
             onClick={() => setShowModal(false)}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md w-full relative"
+              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md w-full relative mt-8"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}

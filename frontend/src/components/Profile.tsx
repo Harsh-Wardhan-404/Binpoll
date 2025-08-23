@@ -66,7 +66,7 @@ const Profile: React.FC = () => {
                  User Profile
                </h1>
                <p className="text-lg text-secondary-300 max-w-2xl mx-auto leading-relaxed">
-                 View your profile information, statistics, and activity on BinPoll.
+                 View your profile information, statistics, and activity on BinIT.
                </p>
              </div>
            </div>

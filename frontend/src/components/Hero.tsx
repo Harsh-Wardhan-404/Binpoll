@@ -60,15 +60,15 @@ export const Hero = () => {
           {/* Minimal Main Title */}
           <div className="space-y-8">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight tracking-tight whitespace-nowrap">
-              <span className="text-gradient">Binpoll</span> - Where Predictions Pay Off
+              <span className="text-gradient">BinIT</span> - Every Deposit Could Make You the Winner
             </h1>
             
             <p className="text-xl md:text-2xl lg:text-3xl text-secondary-300 max-w-4xl mx-auto leading-relaxed">
               <DecryptedText
-                text="Smart Betting • Bigger Rewards • Progressive Jackpots • Streak Bonuses"
+                text="System-Generated Pots • Hidden Capacities • Last Depositor Wins All • Instant New Rounds"
                 speed={80}
                 maxIterations={12}
-                characters="SMART•░▒▓█"
+                characters="BINIT•░▒▓█"
                 className="font-mono font-bold text-primary-300"
                 animateOn="view"
                 revealDirection="center"
@@ -79,9 +79,9 @@ export const Hero = () => {
           {/* Gambling Features */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {[
-              { title: "Dynamic Multipliers", desc: "Real-time odds that change with betting volume" },
-              { title: "Progressive Jackpots", desc: "Hit 50x mega jackpots on high engagement polls" },
-              { title: "Streak Bonuses", desc: "5.0x rewards for legendary 20+ win streaks" }
+              { title: "4 Mystery Pots", desc: "System-generated pots with hidden BNB capacities unknown to players" },
+              { title: "Last Depositor Wins", desc: "When a pot fills to capacity, the final depositor takes the entire pot" },
+              { title: "Instant New Rounds", desc: "Continuous gameplay with fresh pots generated after each win" }
             ].map((item, index) => (
               <motion.div 
                 key={item.title}
@@ -145,10 +145,10 @@ export const Hero = () => {
           {/* Scroll hint */}
           <div className="absolute top-16 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
             <DecryptedText
-              text="EXPLORE GAMBLING FEATURES"
+              text="EXPLORE BINIT SYSTEM"
               speed={120}
               maxIterations={6}
-              characters="↓GAMBLING░▒▓█"
+              characters="↓BINIT░▒▓█"
               className="text-xs text-primary-400/70 font-mono font-bold tracking-widest"
               animateOn="view"
               revealDirection="center"

@@ -116,12 +116,14 @@ export const Navigation = () => {
             onClick={() => navigate('/')}
             style={{ cursor: 'pointer' }}
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-golden-gradient rounded-xl flex items-center justify-center shadow-lg">
-              <FiTrendingUp className="w-6 h-6 sm:w-7 sm:h-7 text-secondary-900" />
-            </div>
-            <span className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-gradient">
-              Binpoll
-            </span>
+            <img 
+              src="/BinIT.svg" 
+              alt="BinIT Logo" 
+              className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 object-contain rounded-lg shadow-lg"
+            />
+            {/* <span className="text-xl sm:text-2xl lg:text-3xl font-display font-bold text-gradient">
+             BinIT
+            </span> */}
           </motion.div>
 
           {/* Desktop Navigation - Center Section */}
