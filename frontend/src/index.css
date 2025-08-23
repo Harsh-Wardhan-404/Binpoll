@@ -72,6 +72,41 @@
     @apply text-secondary-300 hover:text-primary-400 hover:bg-white/10 border border-white/20 hover:border-primary-500/30;
   }
   
+  /* Fix navbar overlap - add padding to body */
+  body {
+    padding-top: 5rem; /* 80px for mobile */
+  }
+  
+  @media (min-width: 640px) {
+    body {
+      padding-top: 5.5rem; /* 88px for sm */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    body {
+      padding-top: 6rem; /* 96px for lg */
+    }
+  }
+  
+  /* Hero section adjustment */
+  .hero-section {
+    @apply min-h-screen flex items-center justify-center overflow-hidden;
+    margin-top: -5rem; /* Compensate for body padding */
+  }
+  
+  @media (min-width: 640px) {
+    .hero-section {
+      margin-top: -5.5rem;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .hero-section {
+      margin-top: -6rem;
+    }
+  }
+  
   /* Hero title sizing */
   .hero-title-xl {
     font-size: clamp(3rem, 8vw, 8rem);

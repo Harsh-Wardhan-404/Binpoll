@@ -34,7 +34,7 @@ export const Hero = () => {
   }, []);
 
   return (
-    <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section ref={heroRef} className="hero-section relative">
       {/* Dark gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-black via-secondary-900 to-secondary-800"></div>
       

@@ -2,6 +2,7 @@ import React, { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAccount, useChainId } from 'wagmi';
 import { useSimplePoll } from '../hooks/useSimplePoll';
+import { usePolls } from '../hooks/usePolls';
 import { bscTestnet, hardhat } from 'wagmi/chains';
 import type { PollDetail as PollDetailType } from '../types';
 import PollDetail from './PollDetail';
@@ -19,6 +20,9 @@ const PollDetailPage: React.FC = () => {
     getDynamicVotePrice
   } = useSimplePoll(chainId);
 
+  // Get API voting function
+  const { voteOnPoll: apiVote } = usePolls();
+
   const handleBack = () => {
     navigate('/dashboard');
   };
@@ -29,15 +33,15 @@ const PollDetailPage: React.FC = () => {
       return;
     }
 
-    if (!isCorrectNetwork) {
-      alert('Please connect to the correct network (BSC Testnet or Hardhat)');
-      return;
-    }
-
     try {
       if (poll?.is_on_chain) {
         // For blockchain polls, we need to call the smart contract
         console.log('🔗 Blockchain poll detected - calling smart contract vote');
+        
+        if (!isCorrectNetwork) {
+          alert('Please connect to the correct network (BSC Testnet or Hardhat)');
+          return;
+        }
         
         // Use the blockchain ID from the poll data
         const blockchainId = poll.blockchain_id;
@@ -54,21 +58,34 @@ const PollDetailPage: React.FC = () => {
         // Call the blockchain voting function
         console.log('🎯 Voting on blockchain poll:', blockchainIdNum, 'option:', optionIndex);
         await blockchainVote(blockchainIdNum, optionIndex);
+        const result = await apiVote(pollId, optionIndex);
         
         alert(`Please confirm the transaction in your wallet to submit your vote with ${dynamicVotePrice} BNB!`);
       } else {
-        // For API polls, use the regular voting flow
-        console.log('Voting on API poll:', poll.id, optionIndex);
-        // This would need to be implemented based on your API structure
-        // You can add API voting logic here
-        alert('API voting not yet implemented');
+        // For API polls, use the API voting flow
+        console.log('🌐 API poll detected - calling API vote');
+        
+        if (!pollId) {
+          throw new Error('Poll ID is missing');
+        }
+        
+        // Call the API voting function
+        console.log('🎯 Voting on API poll:', pollId, 'option:', optionIndex);
+        const result = await apiVote(pollId, optionIndex);
+        
+        if (result) {
+          alert('Vote submitted successfully!');
+          // The poll data will be refreshed automatically by the usePolls hook
+        } else {
+          alert('Failed to submit vote. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Failed to vote:', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert(`Failed to vote: ${errorMessage}`);
     }
-  }, [address, isCorrectNetwork, blockchainVote, getDynamicVotePrice]);
+  }, [address, isCorrectNetwork, blockchainVote, getDynamicVotePrice, apiVote, pollId]);
 
   if (!pollId) {
     return (
