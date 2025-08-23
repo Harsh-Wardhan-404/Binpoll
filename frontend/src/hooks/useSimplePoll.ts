@@ -235,7 +235,7 @@ const SIMPLE_POLL_ABI = [
 // Contract addresses (you'll need to deploy and update these)
 const CONTRACT_ADDRESSES = {
   hardhat: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, // Default Hardhat address
-  bscTestnet: '0xC05904956996c4ec4cddD20B4719f93da636E717' as Address, // Updated with dynamic pricing system
+  bscTestnet: '0x0Da3E4756ADcC5cabBAaf942A932BAb4e867e319' as Address, // Updated with dynamic pricing system
 };
 
 export interface Poll {
