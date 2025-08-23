@@ -1,13 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiMenu, HiX } from 'react-icons/hi';
-<<<<<<< HEAD
-import { FaWallet, FaUser } from 'react-icons/fa';
-import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
-=======
 import { FaWallet } from 'react-icons/fa';
 import { FiTrendingUp, FiHome, FiBarChart2, FiUser, FiLogOut, FiSettings } from 'react-icons/fi';
->>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
 import { gsap } from 'gsap';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
@@ -165,26 +160,6 @@ export const Navigation = () => {
               <span>Dashboard</span>
             </motion.button>
 
-<<<<<<< HEAD
-            <motion.button
-              onClick={() => navigate('/profile')}
-              className={`navbar-button flex items-center space-x-3 ${
-                currentPage === 'profile'
-                  ? 'navbar-button-primary'
-                  : 'navbar-button-secondary'
-              }`}
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaUser className="w-5 h-5" />
-              <span>Profile</span>
-            </motion.button>
-
-            {/* Wallet Connect with better spacing */}
-            <div className="ml-6">
-              <WalletConnectAuth />
-            </div>
-=======
             {/* Profile Section */}
             {isAuthenticated && isConnected ? (
               <div className="relative" ref={profileDropdownRef}>
@@ -272,7 +247,6 @@ export const Navigation = () => {
               /* Wallet Connect */
               <WalletConnectAuth />
             )}
->>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
           </div>
 
           {/* Mobile Menu Button */}
@@ -352,29 +326,6 @@ export const Navigation = () => {
                     <span>Dashboard</span>
                   </motion.button>
 
-<<<<<<< HEAD
-                  <motion.button
-                    onClick={() => {
-                      navigate('/profile');
-                      setIsOpen(false);
-                    }}
-                    className={`w-full navbar-button flex items-center justify-center space-x-3 ${
-                      currentPage === 'profile'
-                        ? 'navbar-button-primary'
-                        : 'navbar-button-secondary'
-                    }`}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <FaUser className="w-5 h-5" />
-                    <span>Profile</span>
-                  </motion.button>
-
-                  {/* Mobile Wallet Connect */}
-                  <div className="pt-4">
-                    <WalletConnectAuth />
-                  </div>
-=======
                   {/* Mobile Profile Section */}
                   {isAuthenticated && isConnected ? (
                     <>
@@ -410,7 +361,6 @@ export const Navigation = () => {
                       <WalletConnectAuth />
                     </div>
                   )}
->>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
                 </div>
               </div>
             </motion.div>
