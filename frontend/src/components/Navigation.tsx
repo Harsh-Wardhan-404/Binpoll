@@ -1,17 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiMenu, HiX } from 'react-icons/hi';
+<<<<<<< HEAD
 import { FaWallet, FaUser } from 'react-icons/fa';
 import { FiTrendingUp, FiHome, FiBarChart2 } from 'react-icons/fi';
+=======
+import { FaWallet } from 'react-icons/fa';
+import { FiTrendingUp, FiHome, FiBarChart2, FiUser, FiLogOut, FiSettings } from 'react-icons/fi';
+>>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
 import { gsap } from 'gsap';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAccount } from 'wagmi';
 import WalletConnectAuth from './WalletConnectAuth';
+import ProfileCard from './ProfileCard';
+import { useAuth } from '../hooks/useAuth';
 
 export const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { address, isConnected } = useAccount();
+  const { isAuthenticated, logout } = useAuth();
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Determine current page based on pathname
   const currentPage = location.pathname === '/' ? 'home' : 
@@ -25,6 +37,18 @@ export const Navigation = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+        setShowProfileDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const navItems = currentPage === 'home' ? [
@@ -54,6 +78,26 @@ export const Navigation = () => {
       height: 'auto',
       transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
     }
+  };
+
+  const dropdownVariants = {
+    hidden: { opacity: 0, y: -10, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }
+    }
+  };
+
+  const handleProfileClick = () => {
+    setShowProfileDropdown(!showProfileDropdown);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setShowProfileDropdown(false);
+    navigate('/');
   };
 
   return (
@@ -121,6 +165,7 @@ export const Navigation = () => {
               <span>Dashboard</span>
             </motion.button>
 
+<<<<<<< HEAD
             <motion.button
               onClick={() => navigate('/profile')}
               className={`navbar-button flex items-center space-x-3 ${
@@ -139,6 +184,95 @@ export const Navigation = () => {
             <div className="ml-6">
               <WalletConnectAuth />
             </div>
+=======
+            {/* Profile Section */}
+            {isAuthenticated && isConnected ? (
+              <div className="relative" ref={profileDropdownRef}>
+                <motion.button
+                  onClick={handleProfileClick}
+                  className="flex items-center space-x-2 px-4 py-2 rounded-lg transition-all duration-300 text-secondary-300 hover:text-primary-400 hover:bg-white/5"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center">
+                    <FiUser className="w-4 h-4 text-secondary-900" />
+                  </div>
+                  <span className="hidden lg:block">
+                    {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Profile'}
+                  </span>
+                </motion.button>
+
+                {/* Profile Dropdown */}
+                <AnimatePresence>
+                  {showProfileDropdown && (
+                    <motion.div
+                      variants={dropdownVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="hidden"
+                      className="absolute right-0 top-full mt-2 w-80 nav-profile-dropdown overflow-hidden"
+                    >
+                      {/* Profile Card Section */}
+                      <div className="p-4 border-b border-secondary-700">
+                        <div className="nav-profile-card">
+                          <ProfileCard
+                            avatarUrl=""
+                            name="User"
+                            title="Member"
+                            handle={address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "user"}
+                            status="Online"
+                            showUserInfo={false}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Profile Actions */}
+                      <div className="p-2">
+                        <motion.button
+                          onClick={() => {
+                            navigate('/profile');
+                            setShowProfileDropdown(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-secondary-300 hover:text-primary-400 hover:bg-white/5 rounded-lg transition-all duration-300"
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <FiUser className="w-4 h-4" />
+                          <span>View Profile</span>
+                        </motion.button>
+
+                        <motion.button
+                          onClick={() => {
+                            navigate('/dashboard');
+                            setShowProfileDropdown(false);
+                          }}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-secondary-300 hover:text-primary-400 hover:bg-white/5 rounded-lg transition-all duration-300"
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <FiBarChart2 className="w-4 h-4" />
+                          <span>Dashboard</span>
+                        </motion.button>
+
+                        <motion.button
+                          onClick={handleLogout}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-all duration-300"
+                          whileHover={{ x: 4 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <FiLogOut className="w-4 h-4" />
+                          <span>Disconnect Wallet</span>
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              /* Wallet Connect */
+              <WalletConnectAuth />
+            )}
+>>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
           </div>
 
           {/* Mobile Menu Button */}
@@ -218,6 +352,7 @@ export const Navigation = () => {
                     <span>Dashboard</span>
                   </motion.button>
 
+<<<<<<< HEAD
                   <motion.button
                     onClick={() => {
                       navigate('/profile');
@@ -239,6 +374,43 @@ export const Navigation = () => {
                   <div className="pt-4">
                     <WalletConnectAuth />
                   </div>
+=======
+                  {/* Mobile Profile Section */}
+                  {isAuthenticated && isConnected ? (
+                    <>
+                      <motion.button
+                        onClick={() => {
+                          navigate('/profile');
+                          setIsOpen(false);
+                        }}
+                        className="w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-secondary-300 hover:text-primary-400 hover:bg-white/5"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <FiUser className="w-4 h-4" />
+                        <span>Profile</span>
+                      </motion.button>
+
+                      <motion.button
+                        onClick={() => {
+                          handleLogout();
+                          setIsOpen(false);
+                        }}
+                        className="w-full px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <FiLogOut className="w-4 h-4" />
+                        <span>Disconnect Wallet</span>
+                      </motion.button>
+                    </>
+                  ) : (
+                    /* Mobile Wallet Connect */
+                    <div className="pt-2">
+                      <WalletConnectAuth />
+                    </div>
+                  )}
+>>>>>>> 2bdd2b772df699260f5501435dc9926d0e09c8f2
                 </div>
               </div>
             </motion.div>

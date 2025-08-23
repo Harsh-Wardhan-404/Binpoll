@@ -128,6 +128,74 @@
     animation: shimmer 2s infinite;
   }
   
+  /* Navigation Profile Dropdown Styles */
+  .nav-profile-dropdown {
+    @apply bg-secondary-800/95 backdrop-blur-xl border border-secondary-700 rounded-xl shadow-2xl;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  
+  .nav-profile-dropdown::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 20px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 8px solid rgba(31, 41, 55, 0.95);
+  }
+  
+  /* Profile card in navigation adjustments */
+  .nav-profile-card .pc-card {
+    @apply bg-transparent border-none shadow-none p-0;
+  }
+  
+  .nav-profile-card .pc-card-wrapper {
+    @apply max-w-none;
+  }
+  
+  .nav-profile-card .pc-inside {
+    @apply p-0;
+  }
+  
+  .nav-profile-card .pc-content {
+    @apply mb-0;
+  }
+  
+  .nav-profile-card .pc-avatar-content {
+    @apply mb-2;
+  }
+  
+  .nav-profile-card .pc-avatar-content .avatar {
+    @apply w-16 h-16 border-2;
+  }
+  
+  .nav-profile-card .pc-details h3 {
+    @apply text-base mb-1;
+  }
+  
+  .nav-profile-card .pc-details p {
+    @apply text-sm;
+  }
+  
+  .nav-profile-card .pc-stats {
+    @apply grid-cols-3 gap-2 mb-0;
+  }
+  
+  .nav-profile-card .pc-stat-item {
+    @apply p-2;
+  }
+  
+  .nav-profile-card .pc-stat-label {
+    @apply text-xs;
+  }
+  
+  .nav-profile-card .pc-stat-value {
+    @apply text-sm;
+  }
+  
   @keyframes magnetic-pull {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }

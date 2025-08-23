@@ -66,7 +66,7 @@ export const deleteLocalPoll = (pollId: string): void => {
   }
 };
 
-export const voteOnLocalPoll = (pollId: string, optionId: string, voterAddress: string): void => {
+export const voteOnLocalPoll = (pollId: string, optionId: string): void => {
   try {
     const existingPolls = getLocalPolls();
     const updatedPolls = existingPolls.map(poll => {

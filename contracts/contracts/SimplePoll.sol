@@ -100,7 +100,9 @@ contract SimplePoll {
         
         uint256 pollId = nextPollId++;
         uint256 endTime = block.timestamp + _durationInSeconds;
-        require(_requiredCredibility > 0, "Required credibility must be greater than 0");
+        
+        // Test function to return required credibility (will always fail)
+        // require(false, string(abi.encodePacked("Required credibility: ", _requiredCredibility)));
         
         polls[pollId] = Poll({
             id: pollId,
@@ -147,7 +149,7 @@ contract SimplePoll {
         require(!hasVoted[_pollId][msg.sender], "Already voted");
         require(_optionId < poll.options.length, "Invalid option");
         require(poll.currentVotes < poll.maxVotes, "Poll vote limit reached");
-        require(userCredibility[msg.sender] >= poll.requiredCredibility, "Insufficient credibility");
+        require(userCredibility[msg.sender] <= poll.requiredCredibility, "Insufficient credibility");
         
         // Calculate dynamic vote price based on current position
         uint256 requiredAmount = calculateVotePrice(poll.pollPrice, poll.currentVotes, poll.maxVotes);
