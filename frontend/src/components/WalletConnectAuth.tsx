@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain } from 'wagmi';
 import { bscTestnet, hardhat } from 'wagmi/chains';
@@ -21,8 +21,9 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
   
   const { isAuthenticated, user, authenticate, logout, isLoading } = useAuth();
   
-  const [showModal, setShowModal] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const currentNetwork = chainId === hardhat.id ? 'Hardhat Local' : 
                          chainId === bscTestnet.id ? 'BSC Testnet' : 'Unknown';
@@ -33,9 +34,21 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleConnect = (connector: any) => {
     connect({ connector });
-    setShowModal(false);
+    setShowDropdown(false);
   };
 
   const handleNetworkSwitch = (targetChain: typeof bscTestnet | typeof hardhat) => {
@@ -67,7 +80,15 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
     }
   };
 
-  // Removed auto-authentication - user must manually click to authenticate
+  const dropdownVariants = {
+    hidden: { opacity: 0, y: -10, scale: 0.95 },
+    visible: { 
+      opacity: 1, 
+      y: 0, 
+      scale: 1,
+      transition: { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }
+    }
+  };
 
   // Show authenticated state
   if (isConnected && isAuthenticated && user) {
@@ -225,12 +246,12 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
     );
   }
 
-  // Show not connected state
+  // Show not connected state with dropdown
   return (
-    <>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       <motion.button
-        onClick={() => setShowModal(true)}
-        className={`flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 text-sm ${className}`}
+        onClick={() => setShowDropdown(!showDropdown)}
+        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-secondary-900 font-medium rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/25 text-sm"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         disabled={isPending}
@@ -239,112 +260,96 @@ const WalletConnectAuth: React.FC<WalletConnectAuthProps> = ({ className = '' })
         <span>{isPending ? 'Connecting...' : 'Connect Wallet'}</span>
       </motion.button>
 
-      {/* Connection Modal */}
+      {/* Wallet Connection Dropdown */}
       <AnimatePresence>
-        {showModal && (
+        {showDropdown && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 overflow-hidden"
-            onClick={() => setShowModal(false)}
+            variants={dropdownVariants}
+            initial="hidden"
+            animate="visible"
+            exit="hidden"
+            className="absolute right-0 top-full mt-2 w-80 nav-profile-dropdown overflow-hidden"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-secondary-800 border border-white/10 rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto relative modal-scrollbar"
-              onClick={(e) => e.stopPropagation()}
-              style={{ 
-                scrollbarWidth: 'thin',
-                scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
-              }}
-            >
-              {/* Close Button */}
-              <button
-                onClick={() => setShowModal(false)}
-                className="absolute top-4 right-4 text-secondary-400 hover:text-white transition-colors"
-              >
-                <HiX className="w-6 h-6" />
-              </button>
-
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <FaWallet className="w-8 h-8 text-primary-400" />
+            {/* Header */}
+            <div className="p-4 border-b border-secondary-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-primary-500/20 rounded-full flex items-center justify-center">
+                  <FaWallet className="w-6 h-6 text-primary-400" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Connect & Authenticate</h3>
-                <p className="text-secondary-300">
-                  Connect your wallet and sign a message to access BinPoll
-                </p>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Connect Wallet</h3>
+                  <p className="text-sm text-secondary-400">Choose your preferred wallet</p>
+                </div>
               </div>
+            </div>
 
-              {/* Connector List */}
-              <div className="space-y-3 mb-6">
-                {connectors.map((connector) => (
-                  <motion.button
-                    key={connector.uid}
-                    onClick={() => handleConnect(connector)}
-                    disabled={!connector.name || isPending}
-                    className="w-full flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-primary-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                        <FaWallet className="w-5 h-5 text-primary-400" />
-                      </div>
-                      <div className="text-left">
-                        <div className="font-semibold text-white">{connector.name}</div>
-                        <div className="text-sm text-secondary-400">
-                          {connector.name === 'MetaMask' ? 'Connect using MetaMask' : 'Web3 Browser Wallet'}
-                        </div>
+            {/* Connector List */}
+            <div className="p-2">
+              {connectors.map((connector) => (
+                <motion.button
+                  key={connector.uid}
+                  onClick={() => handleConnect(connector)}
+                  disabled={!connector.name || isPending}
+                  className="w-full flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 hover:border-primary-500/30 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed mb-2"
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center">
+                      <FaWallet className="w-4 h-4 text-primary-400" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold text-white">{connector.name}</div>
+                      <div className="text-xs text-secondary-400">
+                        {connector.name === 'MetaMask' ? 'Connect using MetaMask' : 'Web3 Browser Wallet'}
                       </div>
                     </div>
-                    <HiExternalLink className="w-5 h-5 text-secondary-400" />
-                  </motion.button>
-                ))}
-              </div>
+                  </div>
+                  <HiExternalLink className="w-4 h-4 text-secondary-400" />
+                </motion.button>
+              ))}
+            </div>
 
-              {/* Authentication Info */}
-              <div className="mb-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            {/* Authentication Info */}
+            <div className="p-3 border-t border-secondary-700">
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg mb-3">
                 <div className="flex items-center space-x-2 mb-2">
-                  <FaUser className="w-4 h-4 text-blue-400" />
-                  <span className="text-sm font-medium text-blue-300">Authentication Process</span>
+                  <FaUser className="w-3 h-3 text-blue-400" />
+                  <span className="text-xs font-medium text-blue-300">Authentication Process</span>
                 </div>
-                <div className="text-sm text-secondary-300 space-y-1">
+                <div className="text-xs text-secondary-300 space-y-1">
                   <div>1. Connect your wallet</div>
                   <div>2. Sign a message to authenticate</div>
                   <div>3. Access your personalized dashboard</div>
-                  <div className="text-xs text-secondary-400 mt-2">
+                  <div className="text-xs text-secondary-400 mt-1">
                     * No gas fees required for authentication
                   </div>
                 </div>
               </div>
 
               {/* Network Info */}
-              <div className="mb-4 p-4 bg-primary-500/10 border border-primary-500/20 rounded-lg">
+              <div className="p-3 bg-primary-500/10 border border-primary-500/20 rounded-lg">
                 <div className="flex items-center space-x-2 mb-2">
-                  <FaCheck className="w-4 h-4 text-primary-400" />
-                  <span className="text-sm font-medium text-primary-300">Supported Networks</span>
+                  <FaCheck className="w-3 h-3 text-primary-400" />
+                  <span className="text-xs font-medium text-primary-300">Supported Networks</span>
                 </div>
-                <div className="text-sm text-secondary-300 space-y-1">
+                <div className="text-xs text-secondary-300 space-y-1">
                   <div>• BSC Testnet (Recommended)</div>
                   <div>• Hardhat Local (Development)</div>
                 </div>
               </div>
+            </div>
 
-              {/* Disclaimer */}
-              <div className="text-center">
-                <p className="text-xs text-secondary-400">
-                  By connecting, you agree to our Terms of Service and Privacy Policy
-                </p>
-              </div>
-            </motion.div>
+            {/* Disclaimer */}
+            <div className="p-3 border-t border-secondary-700">
+              <p className="text-xs text-secondary-400 text-center">
+                By connecting, you agree to our Terms of Service and Privacy Policy
+              </p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 
